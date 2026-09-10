@@ -143,7 +143,7 @@ function WeeklyMealPlan({
                                 </div>
                               )}
 
-                              <p className="min-w-0 text-sm font-medium leading-snug text-stone-800 group-hover:text-emerald-900 dark:text-stone-200 dark:group-hover:text-emerald-300 sm:mt-2">
+                              <p className="min-w-0 text-sm font-medium l eading-snug text-stone-800 group-hover:text-emerald-900 dark:text-stone-200 dark:group-hover:text-emerald-300 sm:mt-2">
                                 {meal.recipe.name}
                               </p>
                             </div>
