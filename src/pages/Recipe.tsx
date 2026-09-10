@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, CalendarPlus } from "lucide-react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { filterRecipes, getRecipeFilterQuery } from "@/lib/recipeFilters";
 import AddIngredientsModal from "@/components/recipe/AddIngredientsModal";
@@ -10,6 +10,7 @@ import RecipeNavigation from "@/components/recipe/RecipeNavigation";
 import RecipeNutrition from "@/components/recipe/RecipeNutrition";
 import RecipeStats from "@/components/recipe/RecipeStats";
 import type { RecipeDetail, RecipeSummary } from "@/types/recipe";
+import PlanRecipeModal from "@/components/recipe/PlanRecipeModal";
 
 interface SwipeStart {
   x: number;
@@ -28,7 +29,9 @@ function RecipePage() {
   const [error, setError] = useState(false);
 
   const [shoppingPickerOpen, setShoppingPickerOpen] = useState(false);
-  const [selectedIngredientIds, setSelectedIngredientIds] = useState<number[]>([]);
+  const [selectedIngredientIds, setSelectedIngredientIds] = useState<number[]>(
+    [],
+  );
   const [addingToShopping, setAddingToShopping] = useState(false);
   const [addedToShopping, setAddedToShopping] = useState(false);
   const [shoppingError, setShoppingError] = useState<string | null>(null);
@@ -37,10 +40,13 @@ function RecipePage() {
   const selectedMealType = searchParams.get("mealType") ?? "All";
   const selectedCuisine = searchParams.get("cuisine") ?? "All";
 
+  const [planModalOpen, setPlanModalOpen] = useState(false);
+  const [plannedSuccessfully, setPlannedSuccessfully] = useState(false);
+
   const recipeQuery = getRecipeFilterQuery({
     searchTerm,
     mealType: selectedMealType,
-    cuisine: selectedCuisine
+    cuisine: selectedCuisine,
   });
 
   const navigationRecipes = useMemo(
@@ -48,14 +54,20 @@ function RecipePage() {
       filterRecipes(recipes, {
         searchTerm,
         mealType: selectedMealType,
-        cuisine: selectedCuisine
+        cuisine: selectedCuisine,
       }),
-    [recipes, searchTerm, selectedMealType, selectedCuisine]
+    [recipes, searchTerm, selectedMealType, selectedCuisine],
   );
 
-  const currentIndex = navigationRecipes.findIndex((item) => item.id === recipe?.id);
-  const previousRecipe = currentIndex > 0 ? navigationRecipes[currentIndex - 1] : null;
-  const nextRecipe = currentIndex >= 0 && currentIndex < navigationRecipes.length - 1 ? navigationRecipes[currentIndex + 1] : null;
+  const currentIndex = navigationRecipes.findIndex(
+    (item) => item.id === recipe?.id,
+  );
+  const previousRecipe =
+    currentIndex > 0 ? navigationRecipes[currentIndex - 1] : null;
+  const nextRecipe =
+    currentIndex >= 0 && currentIndex < navigationRecipes.length - 1
+      ? navigationRecipes[currentIndex + 1]
+      : null;
 
   useEffect(() => {
     async function loadRecipes() {
@@ -125,7 +137,7 @@ function RecipePage() {
 
     swipeStart.current = {
       x: touch.clientX,
-      y: touch.clientY
+      y: touch.clientY,
     };
   }
 
@@ -156,7 +168,9 @@ function RecipePage() {
   function openShoppingPicker() {
     if (!recipe) return;
 
-    setSelectedIngredientIds(recipe.ingredients.map((ingredient) => ingredient.id));
+    setSelectedIngredientIds(
+      recipe.ingredients.map((ingredient) => ingredient.id),
+    );
     setShoppingError(null);
     setShoppingPickerOpen(true);
   }
@@ -165,7 +179,7 @@ function RecipePage() {
     setSelectedIngredientIds((current) =>
       current.includes(ingredientId)
         ? current.filter((id) => id !== ingredientId)
-        : [...current, ingredientId]
+        : [...current, ingredientId],
     );
   }
 
@@ -175,7 +189,7 @@ function RecipePage() {
     setSelectedIngredientIds(
       selectedIngredientIds.length === recipe.ingredients.length
         ? []
-        : recipe.ingredients.map((ingredient) => ingredient.id)
+        : recipe.ingredients.map((ingredient) => ingredient.id),
     );
   }
 
@@ -189,7 +203,7 @@ function RecipePage() {
       const response = await fetch(`/api/shopping/from-recipe/${recipe.id}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ recipeIngredientIds: selectedIngredientIds })
+        body: JSON.stringify({ recipeIngredientIds: selectedIngredientIds }),
       });
 
       if (!response.ok) {
@@ -210,7 +224,9 @@ function RecipePage() {
   if (loading) {
     return (
       <main className="mx-auto min-h-dvh w-full max-w-4xl px-4 pb-28 pt-8 text-stone-900 dark:text-stone-100 sm:px-6">
-        <p className="text-sm text-stone-500 dark:text-stone-400">Loading recipe...</p>
+        <p className="text-sm text-stone-500 dark:text-stone-400">
+          Loading recipe...
+        </p>
       </main>
     );
   }
@@ -218,44 +234,79 @@ function RecipePage() {
   if (error || !recipe) {
     return (
       <main className="mx-auto min-h-dvh w-full max-w-4xl px-4 pb-28 pt-8 sm:px-6">
-        <button type="button" onClick={() => navigate(-1)} className="mb-6 flex items-center gap-2 text-sm font-medium text-stone-700 dark:text-stone-200">
+        <button
+          type="button"
+          onClick={() => navigate(-1)}
+          className="mb-6 flex items-center gap-2 text-sm font-medium text-stone-700 dark:text-stone-200"
+        >
           <ArrowLeft size={18} />
           Back
         </button>
 
         <div className="rounded-3xl bg-stone-100 p-6 dark:bg-white/[0.05] dark:ring-1 dark:ring-white/[0.06]">
-          <p className="font-medium text-stone-900 dark:text-stone-100">Couldn't load recipe</p>
-          <p className="mt-1 text-sm text-stone-500 dark:text-stone-400">Check that the Nook API is running.</p>
+          <p className="font-medium text-stone-900 dark:text-stone-100">
+            Couldn't load recipe
+          </p>
+          <p className="mt-1 text-sm text-stone-500 dark:text-stone-400">
+            Check that the Nook API is running.
+          </p>
         </div>
       </main>
     );
   }
 
   return (
-    <main className="mx-auto min-h-dvh w-full max-w-4xl pb-28 text-stone-900 transition-colors dark:text-stone-100" onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
-      <RecipeHero name={recipe.name} imageUrl={recipe.imageUrl} onBack={() => navigate(-1)} />
+    <main
+      className="mx-auto min-h-dvh w-full max-w-4xl pb-28 text-stone-900 transition-colors dark:text-stone-100"
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
+    >
+      <RecipeHero
+        name={recipe.name}
+        imageUrl={recipe.imageUrl}
+        onBack={() => navigate(-1)}
+      />
 
       <div className="px-4 pt-6 sm:px-6">
         {recipe.mealTypes.length > 0 && (
           <div className="mb-3 flex flex-wrap gap-2">
             {recipe.mealTypes.map((type) => (
-              <span key={type} className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-800 dark:bg-emerald-400/10 dark:text-emerald-300">
+              <span
+                key={type}
+                className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-800 dark:bg-emerald-400/10 dark:text-emerald-300"
+              >
                 {type}
               </span>
             ))}
           </div>
         )}
 
-        <h1 className="text-3xl font-semibold tracking-tight text-stone-900 dark:text-stone-100 sm:text-4xl">{recipe.name}</h1>
+        <h1 className="text-3xl font-semibold tracking-tight text-stone-900 dark:text-stone-100 sm:text-4xl">
+          {recipe.name}
+        </h1>
 
         {recipe.cuisines.length > 0 && (
-          <p className="mt-2 text-sm text-stone-500 dark:text-stone-400">{recipe.cuisines.join(" · ")}</p>
+          <p className="mt-2 text-sm text-stone-500 dark:text-stone-400">
+            {recipe.cuisines.join(" · ")}
+          </p>
         )}
 
         {recipe.description && (
-          <p className="mt-5 max-w-2xl leading-relaxed text-stone-700 dark:text-stone-300">{recipe.description}</p>
+          <p className="mt-5 max-w-2xl leading-relaxed text-stone-700 dark:text-stone-300">
+            {recipe.description}
+          </p>
         )}
 
+        <div className="mt-6 flex flex-wrap gap-3">
+          <button
+            type="button"
+            onClick={() => setPlanModalOpen(true)}
+            className="flex items-center gap-2 rounded-full bg-emerald-900 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-emerald-800 dark:bg-emerald-700 dark:hover:bg-emerald-600"
+          >
+            <CalendarPlus size={17} />
+            {plannedSuccessfully ? "Planned ✓" : "Plan meal"}
+          </button>
+        </div>
         <RecipeStats recipe={recipe} />
         <RecipeNutrition recipe={recipe} />
 
@@ -275,6 +326,18 @@ function RecipePage() {
           onNavigate={navigateToRecipe}
         />
       </div>
+
+      {planModalOpen && (
+        <PlanRecipeModal
+          recipeId={recipe.id}
+          recipeName={recipe.name}
+          onClose={() => setPlanModalOpen(false)}
+          onPlanned={() => {
+            setPlannedSuccessfully(true);
+            window.setTimeout(() => setPlannedSuccessfully(false), 2000);
+          }}
+        />
+      )}
 
       <AddIngredientsModal
         open={shoppingPickerOpen}

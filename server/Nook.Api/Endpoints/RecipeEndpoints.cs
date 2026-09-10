@@ -71,40 +71,77 @@ public static class RecipeEndpoints
                 calories = r.Calories,
                 proteinGrams = r.ProteinGrams,
                 carbohydrateGrams = r.CarbohydrateGrams,
-                fatGrams = r.FatGrams,
-                mealTypes = r.RecipeRecipeTypes
-                    .Select(x => x.RecipeType.Name)
-                    .OrderBy(x => x)
-                    .ToList(),
-                cuisines = r.RecipeCuisines
-                    .Select(x => x.Cuisine.Name)
-                    .OrderBy(x => x)
-                    .ToList(),
-                ingredients = r.RecipeIngredients
-                    .OrderBy(x => x.SortOrder)
-                    .Select(x => new
-                    {
-                        id = x.RecipeIngredientId,
-                        name = x.Ingredient.Name,
-                        quantity = x.Quantity,
-                        unit = x.Unit,
-                        notes = x.Notes
-                    })
-                    .ToList(),
-                steps = r.RecipeSteps
-                    .OrderBy(x => x.StepNumber)
-                    .Select(x => new
-                    {
-                        stepNumber = x.StepNumber,
-                        instruction = x.Instruction
-                    })
-                    .ToList()
+                fatGrams = r.FatGrams
             })
             .FirstOrDefaultAsync();
 
-        return recipe is null
-            ? Results.NotFound()
-            : Results.Ok(recipe);
+        if (recipe is null)
+        {
+            return Results.NotFound();
+        }
+
+        var mealTypes = await db.Recipes
+            .AsNoTracking()
+            .Where(r => r.RecipeId == id)
+            .SelectMany(r => r.RecipeRecipeTypes)
+            .OrderBy(x => x.RecipeType.Name)
+            .Select(x => x.RecipeType.Name)
+            .ToListAsync();
+
+        var cuisines = await db.Recipes
+            .AsNoTracking()
+            .Where(r => r.RecipeId == id)
+            .SelectMany(r => r.RecipeCuisines)
+            .OrderBy(x => x.Cuisine.Name)
+            .Select(x => x.Cuisine.Name)
+            .ToListAsync();
+
+        var ingredients = await db.Recipes
+            .AsNoTracking()
+            .Where(r => r.RecipeId == id)
+            .SelectMany(r => r.RecipeIngredients)
+            .OrderBy(x => x.SortOrder)
+            .Select(x => new
+            {
+                id = x.RecipeIngredientId,
+                name = x.Ingredient.Name,
+                quantity = x.Quantity,
+                unit = x.Unit,
+                notes = x.Notes
+            })
+            .ToListAsync();
+
+        var steps = await db.Recipes
+            .AsNoTracking()
+            .Where(r => r.RecipeId == id)
+            .SelectMany(r => r.RecipeSteps)
+            .OrderBy(x => x.StepNumber)
+            .Select(x => new
+            {
+                stepNumber = x.StepNumber,
+                instruction = x.Instruction
+            })
+            .ToListAsync();
+
+        return Results.Ok(new
+        {
+            recipe.id,
+            recipe.name,
+            recipe.description,
+            recipe.prepTimeMinutes,
+            recipe.cookTimeMinutes,
+            recipe.totalTimeMinutes,
+            recipe.servings,
+            recipe.imageUrl,
+            recipe.calories,
+            recipe.proteinGrams,
+            recipe.carbohydrateGrams,
+            recipe.fatGrams,
+            mealTypes,
+            cuisines,
+            ingredients,
+            steps
+        });
     }
 
     private static async Task<IResult> CreateRecipe(CreateRecipeRequest request, NookDbContext db)
@@ -232,6 +269,7 @@ public static class RecipeEndpoints
             id = recipe.RecipeId
         });
     }
+
     private static async Task<IResult> GetOptions(NookDbContext db)
     {
         var mealTypes = await db.RecipeTypes
