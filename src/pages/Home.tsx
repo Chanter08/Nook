@@ -69,9 +69,10 @@ function HomePage() {
           <button
             type="button"
             aria-label="Profile"
+            onClick={() => navigate("/us")}
             className="flex h-11 w-11 items-center justify-center rounded-full bg-stone-100 text-stone-700 transition hover:bg-stone-200 dark:bg-white/[0.06] dark:text-stone-200 dark:ring-1 dark:ring-white/[0.06] dark:hover:bg-white/[0.1]"
           >
-            <UserRound size={20} onClick={() => navigate("/us")} />
+            <UserRound size={20} />
           </button>
         </div>
       </header>
@@ -99,7 +100,7 @@ function HomePage() {
         events={events}
         loading={calendarLoading}
         error={calendarError}
-      />  
+      />
 
       <ShoppingPreviewModal
         open={shoppingOpen}

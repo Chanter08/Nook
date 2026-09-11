@@ -25,6 +25,15 @@ app.MapRecipeEndpoints();
 app.MapShoppingEndpoints();
 app.MapMealPlanEndpoints();
 
+app.MapGet("/health", async (NookDbContext db) =>
+{
+    var databaseAvailable = await db.Database.CanConnectAsync();
+
+    return databaseAvailable
+        ? Results.Ok(new { status = "healthy" })
+        : Results.StatusCode(StatusCodes.Status503ServiceUnavailable);
+});
+
 app.MapFallbackToFile("index.html");
 
 app.Run();
