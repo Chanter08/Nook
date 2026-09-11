@@ -1,6 +1,7 @@
 using Ical.Net;
 using Ical.Net.CalendarComponents;
 using Ical.Net.DataTypes;
+using Nook.Api.DTOs.Calendar;
 
 namespace Nook.Api.Services;
 
@@ -17,7 +18,7 @@ public class CalendarService
         _httpClientFactory = httpClientFactory;
     }
 
-    public async Task<object> GetUpcomingAsync()
+    public async Task<List<CalendarEventResponse>> GetUpcomingAsync()
     {
         var calendarUrl = _configuration["GoogleCalendar:IcalUrl"];
 
@@ -55,17 +56,16 @@ public class CalendarService
                     ?? x.Period.EndTime?.AsUtc
                     ?? start;
 
-                return new
+                return new CalendarEventResponse
                 {
-                    id = calendarEvent.Uid,
-                    title = calendarEvent.Summary ?? "Untitled event",
-                    start,
-                    end,
-                    allDay = !x.Period.StartTime.HasTime
+                    Id = calendarEvent.Uid ?? string.Empty,
+                    Title = calendarEvent.Summary ?? "Untitled event",
+                    Start = start,
+                    End = end,
+                    AllDay = !x.Period.StartTime.HasTime
                 };
             })
-            .OrderBy(x => x.start)
-            .Take(5)
+            .OrderBy(x => x.Start)
             .ToList();
 
         return events;

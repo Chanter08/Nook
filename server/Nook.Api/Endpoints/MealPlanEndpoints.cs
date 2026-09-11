@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Nook.Api.Data;
 using Nook.Api.DTOs;
 using Nook.Api.Models;
+using Nook.Api.DTOs.MealPlan;
 
 namespace Nook.Api.Endpoints;
 
@@ -35,16 +36,16 @@ public static class MealPlanEndpoints
             .Where(x => x.PlanDate >= start && x.PlanDate < end)
             .OrderBy(x => x.PlanDate)
             .ThenBy(x => x.MealType)
-            .Select(x => new
+            .Select(x => new MealPlanEntryResponse
             {
-                id = x.MealPlanEntryId,
-                date = x.PlanDate,
-                mealType = x.MealType,
-                recipe = new
+                Id = x.MealPlanEntryId,
+                Date = x.PlanDate,
+                MealType = x.MealType,
+                Recipe = new MealPlanRecipeResponse
                 {
-                    id = x.Recipe.RecipeId,
-                    name = x.Recipe.Name,
-                    imageUrl = x.Recipe.ImageUrl
+                    Id = x.Recipe.RecipeId,
+                    Name = x.Recipe.Name,
+                    ImageUrl = x.Recipe.ImageUrl
                 }
             })
             .ToListAsync();
@@ -93,10 +94,12 @@ public static class MealPlanEndpoints
         db.MealPlanEntries.Add(entry);
         await db.SaveChangesAsync();
 
-        return Results.Created($"/api/meal-plan/{entry.MealPlanEntryId}", new
-        {
-            id = entry.MealPlanEntryId
-        });
+        return Results.Created(
+            $"/api/meal-plan/{entry.MealPlanEntryId}",
+            new CreateMealPlanEntryResponse
+            {
+                Id = entry.MealPlanEntryId
+            });
     }
 
     private static async Task<IResult> DeleteEntry(int id, NookDbContext db)

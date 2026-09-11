@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import ThemeToggle from "@/components/ThemeToggle";
 import type { NewRecipeIngredient, NewRecipeStep, RecipeOptions } from "@/types/recipe";
+import { createRecipe, getRecipeOptions } from "@/api/recipes";
 
 const units = ["", "each", "g", "kg", "ml", "l", "tbsp", "tsp", "cloves", "pack", "can"];
 
@@ -39,19 +40,13 @@ function AddRecipePage() {
   useEffect(() => {
     async function loadOptions() {
       try {
-        const response = await fetch("/api/recipes/options");
-
-        if (!response.ok) {
-          throw new Error(`Failed to load recipe options: ${response.status}`);
-        }
-
-        const data: RecipeOptions = await response.json();
+        const data = await getRecipeOptions();
         setOptions(data);
       } catch (error) {
         console.error("Recipe options error:", error);
       }
     }
-
+  
     void loadOptions();
   }, []);
 
@@ -139,40 +134,30 @@ function AddRecipePage() {
       setSaving(true);
       setError(null);
 
-      const response = await fetch("/api/recipes", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: name.trim(),
-          description: description.trim() || null,
-          prepTimeMinutes: numberOrNull(prepTime),
-          cookTimeMinutes: numberOrNull(cookTime),
-          servings: numberOrNull(servings),
-          imageUrl: imageUrl.trim() || null,
-          calories: numberOrNull(calories),
-          proteinGrams: numberOrNull(protein),
-          carbohydrateGrams: numberOrNull(carbs),
-          fatGrams: numberOrNull(fat),
-          mealTypes: selectedMealTypes,
-          cuisines: selectedCuisines,
-          ingredients: validIngredients.map((ingredient) => ({
-            name: ingredient.name.trim(),
-            quantity: numberOrNull(ingredient.quantity),
-            unit: ingredient.unit || null,
-            notes: ingredient.notes.trim() || null
-          })),
-          steps: validSteps.map((step) => ({
-            instruction: step.instruction.trim()
-          }))
-        })
+      const result = await createRecipe({
+        name: name.trim(),
+        description: description.trim() || null,
+        prepTimeMinutes: numberOrNull(prepTime),
+        cookTimeMinutes: numberOrNull(cookTime),
+        servings: numberOrNull(servings),
+        imageUrl: imageUrl.trim() || null,
+        calories: numberOrNull(calories),
+        proteinGrams: numberOrNull(protein),
+        carbohydrateGrams: numberOrNull(carbs),
+        fatGrams: numberOrNull(fat),
+        mealTypes: selectedMealTypes,
+        cuisines: selectedCuisines,
+        ingredients: validIngredients.map((ingredient) => ({
+          name: ingredient.name.trim(),
+          quantity: numberOrNull(ingredient.quantity),
+          unit: ingredient.unit || null,
+          notes: ingredient.notes.trim() || null
+        })),
+        steps: validSteps.map((step) => ({
+          instruction: step.instruction.trim()
+        }))
       });
-
-      if (!response.ok) {
-        const body = await response.json().catch(() => null);
-        throw new Error(body?.message ?? "Failed to save recipe.");
-      }
-
-      const result: { id: number } = await response.json();
+      
       navigate(`/meals/${result.id}`);
     } catch (error) {
       console.error("Save recipe error:", error);

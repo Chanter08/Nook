@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Nook.Api.Data;
 using Nook.Api.DTOs;
 using Nook.Api.Models;
+using Nook.Api.DTOs.Shopping;
 
 namespace Nook.Api.Services;
 
@@ -14,7 +15,7 @@ public class ShoppingService
         _db = db;
     }
 
-    public async Task<object> GetShoppingListAsync()
+    public async Task<ShoppingListResponse> GetShoppingListAsync()
     {
         var shoppingList = await _db.ShoppingLists
             .AsNoTracking()
@@ -22,14 +23,12 @@ public class ShoppingService
 
         if (shoppingList is null)
         {
-            return new
+            return new ShoppingListResponse
             {
-                id = 0,
-                name = "Shopping",
-                itemCount = 0,
-                completedCount = 0,
-                items = Array.Empty<object>(),
-                completedItems = Array.Empty<object>()
+                Id = 0,
+                Name = "Shopping",
+                ItemCount = 0,
+                CompletedCount = 0
             };
         }
 
@@ -39,17 +38,17 @@ public class ShoppingService
                 x.ShoppingListId == shoppingList.ShoppingListId &&
                 !x.IsCompleted)
             .OrderBy(x => x.CreatedDate)
-            .Select(x => new
+            .Select(x => new ShoppingListItemResponse
             {
-                id = x.ShoppingListItemId,
-                ingredientId = x.IngredientId,
-                shoppingCatalogItemId = x.ShoppingCatalogItemId,
-                name = x.Name,
-                quantity = x.Quantity,
-                unit = x.Unit,
-                notes = x.Notes,
-                category = x.Category,
-                origin = x.IngredientId != null ? "recipe" : "manual"
+                Id = x.ShoppingListItemId,
+                IngredientId = x.IngredientId,
+                ShoppingCatalogItemId = x.ShoppingCatalogItemId,
+                Name = x.Name,
+                Quantity = x.Quantity,
+                Unit = x.Unit,
+                Notes = x.Notes,
+                Category = x.Category,
+                Origin = x.IngredientId != null ? "recipe" : "manual"
             })
             .ToListAsync();
 
@@ -59,41 +58,41 @@ public class ShoppingService
                 x.ShoppingListId == shoppingList.ShoppingListId &&
                 x.IsCompleted)
             .OrderByDescending(x => x.CompletedDate)
-            .Select(x => new
+            .Select(x => new ShoppingListItemResponse
             {
-                id = x.ShoppingListItemId,
-                ingredientId = x.IngredientId,
-                shoppingCatalogItemId = x.ShoppingCatalogItemId,
-                name = x.Name,
-                quantity = x.Quantity,
-                unit = x.Unit,
-                notes = x.Notes,
-                category = x.Category,
-                origin = x.IngredientId != null ? "recipe" : "manual"
+                Id = x.ShoppingListItemId,
+                IngredientId = x.IngredientId,
+                ShoppingCatalogItemId = x.ShoppingCatalogItemId,
+                Name = x.Name,
+                Quantity = x.Quantity,
+                Unit = x.Unit,
+                Notes = x.Notes,
+                Category = x.Category,
+                Origin = x.IngredientId != null ? "recipe" : "manual"
             })
             .ToListAsync();
 
-        return new
+        return new ShoppingListResponse
         {
-            id = shoppingList.ShoppingListId,
-            name = shoppingList.Name,
-            itemCount = items.Count,
-            completedCount = completedItems.Count,
-            items,
-            completedItems
+            Id = shoppingList.ShoppingListId,
+            Name = shoppingList.Name,
+            ItemCount = items.Count,
+            CompletedCount = completedItems.Count,
+            Items = items,
+            CompletedItems = completedItems
         };
     }
 
-    public async Task<object> SearchCatalogAsync(string? query)
+    public async Task<List<ShoppingCatalogSuggestionResponse>> SearchCatalogAsync(string? query)
     {
         var search = NormalizeCatalogName(query);
 
         if (string.IsNullOrWhiteSpace(search))
         {
-            return Array.Empty<object>();
+            return [];
         }
 
-        var results = await _db.ShoppingCatalogItems
+        return await _db.ShoppingCatalogItems
             .AsNoTracking()
             .Where(x => x.NormalizedName.Contains(search))
             .OrderByDescending(x => x.NormalizedName.StartsWith(search))
@@ -101,17 +100,15 @@ public class ShoppingService
             .ThenByDescending(x => x.UseCount)
             .ThenBy(x => x.Name)
             .Take(8)
-            .Select(x => new
+            .Select(x => new ShoppingCatalogSuggestionResponse
             {
-                id = x.ShoppingCatalogItemId,
-                name = x.Name,
-                unit = x.DefaultUnit,
-                category = x.Category,
-                notes = x.DefaultNotes
+                Id = x.ShoppingCatalogItemId,
+                Name = x.Name,
+                Unit = x.DefaultUnit,
+                Category = x.Category,
+                Notes = x.DefaultNotes
             })
             .ToListAsync();
-
-        return results;
     }
 
     public async Task<AddManualShoppingItemResult> AddManualItemAsync(
@@ -321,6 +318,10 @@ public class ShoppingService
                 null);
 
             var existing = existingItems.FirstOrDefault(x =>
+            x.ShoppingCatalogItemId == catalogItem.ShoppingCatalogItemId &&
+            NormalizeShoppingUnit(x.Unit) == normalizedUnit);
+
+            existing ??= existingItems.FirstOrDefault(x =>
                 x.IngredientId == ingredient.IngredientId &&
                 NormalizeShoppingUnit(x.Unit) == normalizedUnit);
 

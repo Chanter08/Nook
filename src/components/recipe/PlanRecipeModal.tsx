@@ -1,6 +1,7 @@
 import { CalendarDays, Check, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import type { PlannedMeal } from "@/types/mealPlan";
+import { addMealPlanEntry, getMealPlan } from "@/api/mealPlan";
 
 interface PlanRecipeModalProps {
   recipeId: number;
@@ -42,27 +43,21 @@ function PlanRecipeModal({ recipeId, recipeName, onClose, onPlanned }: PlanRecip
     .filter((meal) => meal.date === selectedDateKey)
     .map((meal) => meal.mealType);
 
-  useEffect(() => {
-    async function loadPlan() {
-      try {
-        const response = await fetch(`/api/meal-plan/week?start=${getDateKey(today)}`);
-
-        if (!response.ok) {
-          throw new Error(`Failed to load meal plan: ${response.status}`);
+    useEffect(() => {
+      async function loadPlan() {
+        try {
+          const data = await getMealPlan(getDateKey(today));
+          setPlannedMeals(data);
+        } catch (error) {
+          console.error("Meal plan error:", error);
+          setError("Couldn't load the meal plan.");
+        } finally {
+          setLoadingPlan(false);
         }
-
-        const data: PlannedMeal[] = await response.json();
-        setPlannedMeals(data);
-      } catch (error) {
-        console.error("Meal plan error:", error);
-        setError("Couldn't load the meal plan.");
-      } finally {
-        setLoadingPlan(false);
       }
-    }
-
-    void loadPlan();
-  }, []);
+    
+      void loadPlan();
+    }, []);
 
   useEffect(() => {
     if (usedMealTypes.includes(selectedMealType)) {
@@ -91,21 +86,12 @@ function PlanRecipeModal({ recipeId, recipeName, onClose, onPlanned }: PlanRecip
       setSaving(true);
       setError(null);
 
-      const response = await fetch("/api/meal-plan", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          date: selectedDateKey,
-          mealType: selectedMealType,
-          recipeId
-        })
+      await addMealPlanEntry({
+        date: selectedDateKey,
+        mealType: selectedMealType,
+        recipeId
       });
-
-      if (!response.ok) {
-        const body = await response.json().catch(() => null);
-        throw new Error(body?.message ?? "Couldn't plan the meal.");
-      }
-
+      
       onPlanned();
       onClose();
     } catch (error) {

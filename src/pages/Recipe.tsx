@@ -11,6 +11,8 @@ import RecipeNutrition from "@/components/recipe/RecipeNutrition";
 import RecipeStats from "@/components/recipe/RecipeStats";
 import type { RecipeDetail, RecipeSummary } from "@/types/recipe";
 import PlanRecipeModal from "@/components/recipe/PlanRecipeModal";
+import { getRecipe, getRecipes } from "@/api/recipes";
+import { addRecipeIngredientsToShopping } from "@/api/shopping";
 
 interface SwipeStart {
   x: number;
@@ -72,13 +74,7 @@ function RecipePage() {
   useEffect(() => {
     async function loadRecipes() {
       try {
-        const response = await fetch("/api/recipes");
-
-        if (!response.ok) {
-          throw new Error(`Failed to load recipes: ${response.status}`);
-        }
-
-        const data: RecipeSummary[] = await response.json();
+        const data = await getRecipes();
         setRecipes(data);
       } catch (error) {
         console.error("Recipe navigation error:", error);
@@ -90,17 +86,13 @@ function RecipePage() {
 
   useEffect(() => {
     async function loadRecipe() {
+      if (!id) return;
+
       try {
         setLoading(true);
         setError(false);
 
-        const response = await fetch(`/api/recipes/${id}`);
-
-        if (!response.ok) {
-          throw new Error(`Failed to load recipe: ${response.status}`);
-        }
-
-        const data: RecipeDetail = await response.json();
+        const data = await getRecipe(id);
         setRecipe(data);
       } catch (error) {
         console.error("Recipe error:", error);
@@ -200,16 +192,8 @@ function RecipePage() {
       setAddingToShopping(true);
       setShoppingError(null);
 
-      const response = await fetch(`/api/shopping/from-recipe/${recipe.id}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ recipeIngredientIds: selectedIngredientIds }),
-      });
-
-      if (!response.ok) {
-        throw new Error(await response.text());
-      }
-
+      await addRecipeIngredientsToShopping(recipe.id, selectedIngredientIds);
+      
       setShoppingPickerOpen(false);
       setAddedToShopping(true);
       window.setTimeout(() => setAddedToShopping(false), 2000);

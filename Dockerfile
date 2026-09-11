@@ -30,8 +30,8 @@ WORKDIR /app
 COPY --from=backend-build /app/publish .
 COPY --from=frontend-build /src/dist ./wwwroot
 
-ENV ASPNETCORE_URLS=http://+:5173
+ENV ASPNETCORE_URLS=http://+:8080
 
-EXPOSE 5173
+EXPOSE 8080
 
 ENTRYPOINT ["dotnet", "Nook.Api.dll"]

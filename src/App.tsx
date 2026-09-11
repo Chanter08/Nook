@@ -7,6 +7,7 @@ import MealsPage from "@/pages/Meals";
 import RecipePage from "@/pages/Recipe";
 import ShoppingPage from "./pages/Shopping";
 import AddRecipePage from "@/pages/AddRecipe";
+import UsPage from "@/pages/Us";
 
 function App() {
   return (
@@ -19,6 +20,7 @@ function App() {
           <Route path="/meals/:id" element={<RecipePage />} />
           <Route path="/shopping" element={<ShoppingPage />} />
           <Route path="/meals/new" element={<AddRecipePage />} />
+          <Route path="/us" element={<UsPage />} />
         </Routes>
         <BottomNavigation />
       </div>

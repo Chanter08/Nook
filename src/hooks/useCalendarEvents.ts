@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { getUpcomingCalendarEvents } from "@/api/calendar";
 import type { CalendarEvent } from "@/types/calendar";
 
 export function useCalendarEvents() {
@@ -9,15 +10,7 @@ export function useCalendarEvents() {
   const refresh = useCallback(async () => {
     try {
       setError(false);
-
-      const response = await fetch("/api/calendar/upcoming");
-
-      if (!response.ok) {
-        throw new Error(`Failed to load calendar: ${response.status}`);
-      }
-
-      const data: CalendarEvent[] = await response.json();
-      setEvents(data);
+      setEvents(await getUpcomingCalendarEvents());
     } catch (error) {
       console.error("Calendar error:", error);
       setError(true);

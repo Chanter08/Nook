@@ -10,6 +10,7 @@ import { useCalendarEvents } from "@/hooks/useCalendarEvents";
 import { useMealPlan } from "@/hooks/useMealPlan";
 import { useShoppingList } from "@/hooks/useShoppingList";
 import { getGreeting, getNextMeal, getPlanStart } from "@/lib/homeDashboard";
+import { useNavigate } from "react-router-dom";
 
 function HomePage() {
   const [shoppingOpen, setShoppingOpen] = useState(false);
@@ -42,6 +43,8 @@ function HomePage() {
 
   const nextMeal = getNextMeal(meals);
 
+  const navigate = useNavigate();
+
   function openShoppingList() {
     setShoppingOpen(true);
     clearActionError();
@@ -66,6 +69,7 @@ function HomePage() {
           <button
             type="button"
             aria-label="Profile"
+            onClick={() => navigate("/us")}
             className="flex h-11 w-11 items-center justify-center rounded-full bg-stone-100 text-stone-700 transition hover:bg-stone-200 dark:bg-white/[0.06] dark:text-stone-200 dark:ring-1 dark:ring-white/[0.06] dark:hover:bg-white/[0.1]"
           >
             <UserRound size={20} />
@@ -96,7 +100,7 @@ function HomePage() {
         events={events}
         loading={calendarLoading}
         error={calendarError}
-      />  
+      />
 
       <ShoppingPreviewModal
         open={shoppingOpen}
