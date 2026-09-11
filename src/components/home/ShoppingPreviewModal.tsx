@@ -22,7 +22,7 @@ function formatQuantity(quantity: number | null) {
 
 function formatAmount(item: ShoppingListItem) {
   const quantity = formatQuantity(item.quantity);
-  if (!quantity) return item.notes ?? "";
+  if (!quantity) return "";
   if (!item.unit || item.unit.toLowerCase() === "each") return quantity;
   return `${quantity} ${item.unit}`;
 }

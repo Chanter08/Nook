@@ -9,7 +9,11 @@ interface UpcomingEventsProps {
   error: boolean;
 }
 
-function UpcomingEvents({ events, loading, error }: UpcomingEventsProps) {
+
+
+function  UpcomingEvents({ events, loading, error }: UpcomingEventsProps) {
+  const visibleEvents = events.slice(0, 5);
+
   return (
     <section className="mt-6 flex flex-col">
       <div className="mb-3 flex items-center justify-between">
@@ -37,8 +41,8 @@ function UpcomingEvents({ events, loading, error }: UpcomingEventsProps) {
           </div>
         )}
 
-        {!loading && !error && events.map((event, index) => (
-          <div key={`${event.id}-${event.start}`} className={`flex items-center gap-4 p-4 transition hover:bg-stone-50 dark:hover:bg-white/[0.035] ${index !== events.length - 1 ? "border-b border-stone-100 dark:border-white/[0.06]" : ""}`}>
+        {!loading && !error && visibleEvents.map((event, index) => (
+          <div key={`${event.id}-${event.start}`} className={`flex items-center gap-4 p-4 transition hover:bg-stone-50 dark:hover:bg-white/[0.035] ${index !== visibleEvents.length - 1 ? "border-b border-stone-100 dark:border-white/[0.06]" : ""}`}>
             <div className="flex w-12 shrink-0 flex-col items-center">
               <span className="text-xl font-semibold leading-none text-stone-900 dark:text-stone-100">{getEventDay(event)}</span>
               <span className="mt-1 text-xs font-medium text-emerald-800 dark:text-emerald-400">{getEventMonth(event)}</span>

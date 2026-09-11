@@ -30,7 +30,7 @@ WORKDIR /app
 COPY --from=backend-build /app/publish .
 COPY --from=frontend-build /src/dist ./wwwroot
 
-ENV ASPNETCORE_URLS=http://+:5173
+ENV ASPNETCORE_URLS=http://+:8080
 
 EXPOSE 5173
 

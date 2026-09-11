@@ -1,5 +1,4 @@
 import { Check, ShoppingBasket, X } from "lucide-react";
-import { formatIngredientAmount } from "@/lib/recipe";
 import type { RecipeIngredient } from "@/types/recipe";
 
 interface AddIngredientsModalProps {
@@ -12,6 +11,18 @@ interface AddIngredientsModalProps {
   onToggle: (id: number) => void;
   onToggleAll: () => void;
   onSubmit: () => void;
+}
+
+function formatAmount(ingredient: RecipeIngredient) {
+  if (ingredient.quantity === null) return "";
+
+  const quantity = Number.isInteger(ingredient.quantity)
+    ? ingredient.quantity.toString()
+    : ingredient.quantity.toFixed(2).replace(/0+$/, "").replace(/\.$/, "");
+
+  if (!ingredient.unit || ingredient.unit.toLowerCase() === "each") return quantity;
+
+  return `${quantity} ${ingredient.unit}`;
 }
 
 function AddIngredientsModal({
@@ -67,7 +78,7 @@ function AddIngredientsModal({
                     {ingredient.notes && <p className="mt-0.5 text-xs text-stone-400 dark:text-stone-500">{ingredient.notes}</p>}
                   </div>
 
-                  <p className="shrink-0 text-sm text-stone-500 dark:text-stone-400">{formatIngredientAmount(ingredient)}</p>
+                  <p className="shrink-0 text-sm text-stone-500 dark:text-stone-400">{formatAmount(ingredient)}</p>
                 </button>
               );
             })}

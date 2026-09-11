@@ -1,4 +1,10 @@
-import { CalendarDays, Home, Utensils, UserRound } from "lucide-react";
+import {
+  CalendarDays,
+  Home,
+  Utensils,
+  UserRound,
+  ShoppingCart,
+} from "lucide-react";
 
 import { NavLink } from "react-router-dom";
 
@@ -49,14 +55,16 @@ function BottomNavigation() {
         <span className="text-xs font-medium">Plans</span>
       </NavLink>
 
+      <NavLink to="/shopping" className={navClass}>
+        <ShoppingCart size={21} />
+        <span className="text-xs font-medium">Shopping</span>
+      </NavLink>
+
       {/* Not connected yet */}
-      <button
-        type="button"
-        className="flex flex-col items-center gap-1 text-stone-400"
-      >
+      <NavLink to="/us" className={navClass}>
         <UserRound size={21} />
-        <span className="text-xs">Us</span>
-      </button>
+        <span className="text-xs font-medium">Us</span>
+      </NavLink>
     </nav>
   );
 }

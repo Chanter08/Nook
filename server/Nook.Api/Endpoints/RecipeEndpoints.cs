@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Nook.Api.Data;
 using Nook.Api.DTOs;
 using Nook.Api.Models;
+using Nook.Api.DTOs.Recipes;
 
 namespace Nook.Api.Endpoints;
 
@@ -25,28 +26,28 @@ public static class RecipeEndpoints
             .AsNoTracking()
             .Where(r => !r.IsArchived)
             .OrderBy(r => r.Name)
-            .Select(r => new
+            .Select(r => new RecipeSummaryResponse
             {
-                id = r.RecipeId,
-                name = r.Name,
-                description = r.Description,
-                prepTimeMinutes = r.PrepTimeMinutes,
-                cookTimeMinutes = r.CookTimeMinutes,
-                totalTimeMinutes = (r.PrepTimeMinutes ?? 0) + (r.CookTimeMinutes ?? 0),
-                servings = r.Servings,
-                imageUrl = r.ImageUrl,
-                calories = r.Calories,
-                proteinGrams = r.ProteinGrams,
-                carbohydrateGrams = r.CarbohydrateGrams,
-                fatGrams = r.FatGrams,
-                mealTypes = r.RecipeRecipeTypes
-                    .Select(x => x.RecipeType.Name)
-                    .OrderBy(x => x)
-                    .ToList(),
-                cuisines = r.RecipeCuisines
-                    .Select(x => x.Cuisine.Name)
-                    .OrderBy(x => x)
-                    .ToList()
+                Id = r.RecipeId,
+                Name = r.Name,
+                Description = r.Description,
+                PrepTimeMinutes = r.PrepTimeMinutes,
+                CookTimeMinutes = r.CookTimeMinutes,
+                TotalTimeMinutes = (r.PrepTimeMinutes ?? 0) + (r.CookTimeMinutes ?? 0),
+                Servings = r.Servings,
+                ImageUrl = r.ImageUrl,
+                Calories = r.Calories,
+                ProteinGrams = r.ProteinGrams,
+                CarbohydrateGrams = r.CarbohydrateGrams,
+                FatGrams = r.FatGrams,
+                MealTypes = r.RecipeRecipeTypes
+                .Select(x => x.RecipeType.Name)
+                .OrderBy(x => x)
+                .ToList(),
+                Cuisines = r.RecipeCuisines
+                .Select(x => x.Cuisine.Name)
+                .OrderBy(x => x)
+                .ToList()
             })
             .ToListAsync();
 
@@ -58,20 +59,20 @@ public static class RecipeEndpoints
         var recipe = await db.Recipes
             .AsNoTracking()
             .Where(r => r.RecipeId == id && !r.IsArchived)
-            .Select(r => new
+            .Select(r => new RecipeSummaryResponse
             {
-                id = r.RecipeId,
-                name = r.Name,
-                description = r.Description,
-                prepTimeMinutes = r.PrepTimeMinutes,
-                cookTimeMinutes = r.CookTimeMinutes,
-                totalTimeMinutes = (r.PrepTimeMinutes ?? 0) + (r.CookTimeMinutes ?? 0),
-                servings = r.Servings,
-                imageUrl = r.ImageUrl,
-                calories = r.Calories,
-                proteinGrams = r.ProteinGrams,
-                carbohydrateGrams = r.CarbohydrateGrams,
-                fatGrams = r.FatGrams
+                Id = r.RecipeId,
+                Name = r.Name,
+                Description = r.Description,
+                PrepTimeMinutes = r.PrepTimeMinutes,
+                CookTimeMinutes = r.CookTimeMinutes,
+                TotalTimeMinutes = (r.PrepTimeMinutes ?? 0) + (r.CookTimeMinutes ?? 0),
+                Servings = r.Servings,
+                ImageUrl = r.ImageUrl,
+                Calories = r.Calories,
+                ProteinGrams = r.ProteinGrams,
+                CarbohydrateGrams = r.CarbohydrateGrams,
+                FatGrams = r.FatGrams
             })
             .FirstOrDefaultAsync();
 
@@ -101,13 +102,13 @@ public static class RecipeEndpoints
             .Where(r => r.RecipeId == id)
             .SelectMany(r => r.RecipeIngredients)
             .OrderBy(x => x.SortOrder)
-            .Select(x => new
+            .Select(x => new RecipeIngredientResponse
             {
-                id = x.RecipeIngredientId,
-                name = x.Ingredient.Name,
-                quantity = x.Quantity,
-                unit = x.Unit,
-                notes = x.Notes
+                Id = x.RecipeIngredientId,
+                Name = x.Ingredient.Name,
+                Quantity = x.Quantity,
+                Unit = x.Unit,
+                Notes = x.Notes
             })
             .ToListAsync();
 
@@ -116,31 +117,31 @@ public static class RecipeEndpoints
             .Where(r => r.RecipeId == id)
             .SelectMany(r => r.RecipeSteps)
             .OrderBy(x => x.StepNumber)
-            .Select(x => new
+            .Select(x => new RecipeStepResponse
             {
-                stepNumber = x.StepNumber,
-                instruction = x.Instruction
+                StepNumber = x.StepNumber,
+                Instruction = x.Instruction
             })
             .ToListAsync();
 
-        return Results.Ok(new
+        return Results.Ok(new RecipeDetailResponse
         {
-            recipe.id,
-            recipe.name,
-            recipe.description,
-            recipe.prepTimeMinutes,
-            recipe.cookTimeMinutes,
-            recipe.totalTimeMinutes,
-            recipe.servings,
-            recipe.imageUrl,
-            recipe.calories,
-            recipe.proteinGrams,
-            recipe.carbohydrateGrams,
-            recipe.fatGrams,
-            mealTypes,
-            cuisines,
-            ingredients,
-            steps
+            Id = recipe.Id,
+            Name = recipe.Name,
+            Description = recipe.Description,
+            PrepTimeMinutes = recipe.PrepTimeMinutes,
+            CookTimeMinutes = recipe.CookTimeMinutes,
+            TotalTimeMinutes = recipe.TotalTimeMinutes,
+            Servings = recipe.Servings,
+            ImageUrl = recipe.ImageUrl,
+            Calories = recipe.Calories,
+            ProteinGrams = recipe.ProteinGrams,
+            CarbohydrateGrams = recipe.CarbohydrateGrams,
+            FatGrams = recipe.FatGrams,
+            MealTypes = mealTypes,
+            Cuisines = cuisines,
+            Ingredients = ingredients,
+            Steps = steps
         });
     }
 
@@ -264,9 +265,11 @@ public static class RecipeEndpoints
         db.Recipes.Add(recipe);
         await db.SaveChangesAsync();
 
-        return Results.Created($"/api/recipes/{recipe.RecipeId}", new
+        return Results.Created(
+        $"/api/recipes/{recipe.RecipeId}",
+        new CreateRecipeResponse
         {
-            id = recipe.RecipeId
+            Id = recipe.RecipeId
         });
     }
 
@@ -284,10 +287,10 @@ public static class RecipeEndpoints
             .Select(x => x.Name)
             .ToListAsync();
 
-        return Results.Ok(new
+        return Results.Ok(new RecipeOptionsResponse
         {
-            mealTypes,
-            cuisines
+            MealTypes = mealTypes,
+            Cuisines = cuisines
         });
     }
 }

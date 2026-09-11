@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { deleteMealPlanEntry, getMealPlan } from "@/api/mealPlan";
 import type { PlannedMeal } from "@/types/mealPlan";
 
 function getDateKey(date: Date) {
@@ -20,15 +21,7 @@ export function useMealPlan(startDate: Date) {
   const refresh = useCallback(async () => {
     try {
       setError(false);
-
-      const response = await fetch(`/api/meal-plan/week?start=${startKey}`);
-
-      if (!response.ok) {
-        throw new Error(`Failed to load meal plan: ${response.status}`);
-      }
-
-      const data: PlannedMeal[] = await response.json();
-      setMeals(data);
+      setMeals(await getMealPlan(startKey));
     } catch (error) {
       console.error("Meal plan error:", error);
       setError(true);
@@ -48,13 +41,7 @@ export function useMealPlan(startDate: Date) {
       setActionError(null);
       setRemovingIds((current) => [...current, id]);
 
-      const response = await fetch(`/api/meal-plan/${id}`, {
-        method: "DELETE"
-      });
-
-      if (!response.ok) {
-        throw new Error(`Failed to remove meal: ${response.status}`);
-      }
+      await deleteMealPlanEntry(id);
 
       setMeals((current) => current.filter((meal) => meal.id !== id));
     } catch (error) {
