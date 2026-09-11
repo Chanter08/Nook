@@ -1,6 +1,6 @@
 services:
-nook:
-  image: ghcr.io/chanter08/nook:latest
+  nook:
+    image: ghcr.io/chanter08/nook:latest
     container_name: nook
     restart: unless-stopped
     ports:
