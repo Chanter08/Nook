@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Nook.Api.Data;
 
@@ -11,9 +12,11 @@ using Nook.Api.Data;
 namespace Nook.Api.Data.Migrations
 {
     [DbContext(typeof(NookDbContext))]
-    partial class NookDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260911145719_ConfigureDecimalPrecision")]
+    partial class ConfigureDecimalPrecision
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
