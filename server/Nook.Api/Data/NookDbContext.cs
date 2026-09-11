@@ -25,8 +25,19 @@ public class NookDbContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        modelBuilder.Entity<Recipe>()
-            .ToTable("Recipe");
+        modelBuilder.Entity<Recipe>(entity =>
+        {
+            entity.ToTable("Recipe");
+
+            entity.Property(x => x.ProteinGrams)
+                .HasPrecision(18, 2);
+
+            entity.Property(x => x.CarbohydrateGrams)
+                .HasPrecision(18, 2);
+
+            entity.Property(x => x.FatGrams)
+                .HasPrecision(18, 2);
+        });
 
         modelBuilder.Entity<RecipeType>()
             .ToTable("RecipeType");
@@ -43,8 +54,13 @@ public class NookDbContext : DbContext
         modelBuilder.Entity<Ingredient>()
         .ToTable("Ingredient");
 
-        modelBuilder.Entity<RecipeIngredient>()
-         .ToTable("RecipeIngredient");
+        modelBuilder.Entity<RecipeIngredient>(entity =>
+        {
+            entity.ToTable("RecipeIngredient");
+
+            entity.Property(x => x.Quantity)
+                .HasPrecision(18, 2);
+        });
 
         modelBuilder.Entity<RecipeStep>()
         .ToTable("RecipeStep");
