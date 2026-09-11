@@ -18,6 +18,21 @@ builder.Services.AddScoped<CalendarService>();
 
 var app = builder.Build();
 
+if (args.Any(x => x.Equals("--migrate", StringComparison.OrdinalIgnoreCase)))
+{
+    await using var scope = app.Services.CreateAsyncScope();
+
+    var db = scope.ServiceProvider.GetRequiredService<NookDbContext>();
+
+    Console.WriteLine("Applying database migrations...");
+
+    await db.Database.MigrateAsync();
+
+    Console.WriteLine("Database migrations complete.");
+
+    return;
+}
+
 app.UseStaticFiles();
 
 app.MapCalendarEndpoints();
@@ -31,7 +46,10 @@ app.MapGet("/health", async (NookDbContext db) =>
 
     return databaseAvailable
         ? Results.Ok(new { status = "healthy" })
-        : Results.StatusCode(StatusCodes.Status503ServiceUnavailable);
+        : Results.Json(
+            new { status = "unhealthy", database = "unavailable" },
+            statusCode: StatusCodes.Status503ServiceUnavailable
+        );
 });
 
 app.MapFallbackToFile("index.html");
