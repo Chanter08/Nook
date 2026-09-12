@@ -96,7 +96,7 @@ app.MapGet("/health", async (NookDbContext db) =>
                 status = "unhealthy",
                 database = "unavailable"
             },
-            new { status = "unhealthy", database = "unavailable" },
+            statusCode: StatusCodes.Status503ServiceUnavailable
         );
 });
 
