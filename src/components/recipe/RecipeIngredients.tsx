@@ -1,19 +1,25 @@
 import { ShoppingBasket } from "lucide-react";
 import { formatIngredientAmount } from "@/lib/recipe";
-import type { RecipeIngredient } from "@/types/recipe";
+
+interface DisplayIngredient {
+  name: string;
+  quantity: number | null;
+  unit: string | null;
+  notes: string | null;
+}
 
 interface RecipeIngredientsProps {
-  ingredients: RecipeIngredient[];
-  addingToShopping: boolean;
-  addedToShopping: boolean;
-  onAddToShopping: () => void;
+  ingredients: DisplayIngredient[];
+  addingToShopping?: boolean;
+  addedToShopping?: boolean;
+  onAddToShopping?: () => void;
 }
 
 function RecipeIngredients({
   ingredients,
-  addingToShopping,
-  addedToShopping,
-  onAddToShopping
+  addingToShopping = false,
+  addedToShopping = false,
+  onAddToShopping,
 }: RecipeIngredientsProps) {
   return (
     <section className="mt-10">
@@ -25,15 +31,17 @@ function RecipeIngredients({
           </p>
         </div>
 
-        <button type="button" onClick={onAddToShopping} disabled={addingToShopping} className="flex shrink-0 items-center gap-2 rounded-full bg-emerald-900 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-emerald-700 dark:hover:bg-emerald-600">
-          <ShoppingBasket size={17} />
-          {addingToShopping ? "Adding..." : addedToShopping ? "Added ✓" : "Add to shopping"}
-        </button>
+        {onAddToShopping && (
+          <button type="button" onClick={onAddToShopping} disabled={addingToShopping} className="flex shrink-0 items-center gap-2 rounded-full bg-emerald-900 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-emerald-700 dark:hover:bg-emerald-600">
+            <ShoppingBasket size={17} />
+            {addingToShopping ? "Adding..." : addedToShopping ? "Added ✓" : "Add to shopping"}
+          </button>
+        )}
       </div>
 
       <div className="mt-4 grid grid-cols-2 gap-3">
-        {ingredients.map((ingredient) => (
-          <div key={ingredient.id} className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 rounded-2xl border border-stone-200 bg-white p-3 dark:border-white/[0.07] dark:bg-white/[0.045] dark:ring-1 dark:ring-white/[0.025]">
+        {ingredients.map((ingredient, index) => (
+          <div key={`${ingredient.name}-${index}`} className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 rounded-2xl border border-stone-200 bg-white p-3 dark:border-white/[0.07] dark:bg-white/[0.045] dark:ring-1 dark:ring-white/[0.025]">
             <p className="min-w-0 text-sm leading-snug text-stone-800 dark:text-stone-200">{ingredient.name}</p>
             <p className="max-w-[120px] text-right text-sm leading-snug text-stone-500 dark:text-stone-400">{formatIngredientAmount(ingredient)}</p>
           </div>

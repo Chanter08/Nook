@@ -1,6 +1,10 @@
-import type { RecipeIngredient } from "@/types/recipe";
+interface IngredientAmount {
+  quantity: number | null;
+  unit: string | null;
+  notes: string | null;
+}
 
-export function formatIngredientAmount(ingredient: RecipeIngredient) {
+export function formatIngredientAmount(ingredient: IngredientAmount) {
   const quantity =
     ingredient.quantity === null
       ? ""

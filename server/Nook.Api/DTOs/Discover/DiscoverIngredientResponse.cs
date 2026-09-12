@@ -1,0 +1,9 @@
+namespace Nook.Api.DTOs.Discover;
+
+public class DiscoverIngredientResponse
+{
+    public string Name { get; set; } = string.Empty;
+    public decimal? Quantity { get; set; }
+    public string? Unit { get; set; }
+    public string? Notes { get; set; }
+}
