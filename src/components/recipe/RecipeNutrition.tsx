@@ -1,7 +1,11 @@
-import type { RecipeDetail } from "@/types/recipe";
+interface RecipeNutritionData {
+  proteinGrams: number | null;
+  carbohydrateGrams: number | null;
+  fatGrams: number | null;
+}
 
 interface RecipeNutritionProps {
-  recipe: RecipeDetail;
+  recipe: RecipeNutritionData;
 }
 
 function RecipeNutrition({ recipe }: RecipeNutritionProps) {

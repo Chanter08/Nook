@@ -1,7 +1,11 @@
+using System.Net.Http.Headers;
 using Microsoft.EntityFrameworkCore;
 using Nook.Api.Data;
 using Nook.Api.Endpoints;
+using Nook.Api.Integrations.Recipes.Spoonacular;
 using Nook.Api.Services;
+using Nook.Api.Integrations.Recipes.FatSecret;
+using Nook.Api.Integrations.Recipes;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -15,6 +19,45 @@ builder.Services.AddDbContext<NookDbContext>(options =>
 
 builder.Services.AddScoped<ShoppingService>();
 builder.Services.AddScoped<CalendarService>();
+
+builder.Services.AddSingleton<FatSecretTokenService>();
+
+builder.Services.AddHttpClient<FatSecretProvider>(client =>
+{
+    client.BaseAddress = new Uri(
+        "https://platform.fatsecret.com/rest/");
+});
+
+builder.Services.AddHttpClient<SpoonacularProvider>((services, client) =>
+{
+    var configuration = services.GetRequiredService<IConfiguration>();
+
+    var apiKey = configuration["Spoonacular:RapidApiKey"];
+    var apiHost = configuration["Spoonacular:RapidApiHost"];
+
+    if (string.IsNullOrWhiteSpace(apiKey) ||
+        string.IsNullOrWhiteSpace(apiHost))
+    {
+        throw new InvalidOperationException(
+            "Spoonacular RapidAPI configuration is missing."
+        );
+    }
+
+    client.BaseAddress = new Uri($"https://{apiHost}/");
+
+    client.DefaultRequestHeaders.Add(
+        "X-RapidAPI-Key",
+        apiKey
+    );
+
+    client.DefaultRequestHeaders.Add(
+        "X-RapidAPI-Host",
+        apiHost
+    );
+});
+
+builder.Services.AddScoped<IRecipeDiscoveryProvider>(services =>
+    services.GetRequiredService<SpoonacularProvider>());
 
 var app = builder.Build();
 
@@ -39,6 +82,7 @@ app.MapCalendarEndpoints();
 app.MapRecipeEndpoints();
 app.MapShoppingEndpoints();
 app.MapMealPlanEndpoints();
+app.MapDiscoverEndpoints();
 
 app.MapGet("/health", async (NookDbContext db) =>
 {
@@ -47,8 +91,12 @@ app.MapGet("/health", async (NookDbContext db) =>
     return databaseAvailable
         ? Results.Ok(new { status = "healthy" })
         : Results.Json(
+            new
+            {
+                status = "unhealthy",
+                database = "unavailable"
+            },
             new { status = "unhealthy", database = "unavailable" },
-            statusCode: StatusCodes.Status503ServiceUnavailable
         );
 });
 

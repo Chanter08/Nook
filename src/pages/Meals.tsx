@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
-import { Plus, Search, UtensilsCrossed } from "lucide-react";
-import {useNavigate, useSearchParams } from "react-router-dom";
+import { Compass, Plus, Search, UtensilsCrossed } from "lucide-react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import ThemeToggle from "@/components/ThemeToggle";
 import RecipeCard from "@/components/meals/RecipeCard";
 import RecipeFilters from "@/components/meals/RecipeFilters";
@@ -106,6 +106,15 @@ function MealsPage() {
 
         <div className="flex items-center gap-2">
           <ThemeToggle />
+
+          <button
+            type="button"
+            aria-label="Discover recipes"
+            onClick={() => navigate("/discover")}
+            className="flex h-11 w-11 items-center justify-center rounded-full bg-stone-100 text-stone-600 transition hover:bg-emerald-50 hover:text-emerald-800 dark:bg-white/[0.06] dark:text-stone-300 dark:hover:bg-emerald-400/10 dark:hover:text-emerald-300"
+          >
+            <Compass size={21} />
+          </button>
 
           <button
             type="button"

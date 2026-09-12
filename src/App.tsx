@@ -8,6 +8,8 @@ import RecipePage from "@/pages/Recipe";
 import ShoppingPage from "./pages/Shopping";
 import AddRecipePage from "@/pages/AddRecipe";
 import UsPage from "@/pages/Us";
+import DiscoverPage from "@/pages/Discover";
+import DiscoverRecipePage from "@/pages/DiscoverRecipe";
 
 function App() {
   return (
@@ -19,7 +21,10 @@ function App() {
           <Route path="/meals" element={<MealsPage />} />
           <Route path="/meals/:id" element={<RecipePage />} />
           <Route path="/shopping" element={<ShoppingPage />} />
+          <Route path="/discover" element={<DiscoverPage />} />
+          <Route path="/discover/:externalId" element={<DiscoverRecipePage />} />
           <Route path="/meals/new" element={<AddRecipePage />} />
+          
           <Route path="/us" element={<UsPage />} />
         </Routes>
         <BottomNavigation />

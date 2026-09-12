@@ -63,7 +63,7 @@ function WeeklyMealPlan({
           Loading meal plan...
         </div>
       ) : (
-        <div className="-mx-4 overflow-x-auto px-4 pb-3 sm:mx-0 sm:px-0">
+        <div className="-mx-6 overflow-x-auto px-6 pb-6 pt-2 sm:mx-0 sm:px-2">
           <div className="flex min-w-max snap-x snap-mandatory gap-3 sm:grid sm:min-w-0 sm:grid-cols-7 sm:gap-2">
             {days.map((date) => {
               const dateKey = getDateKey(date);
@@ -75,22 +75,33 @@ function WeeklyMealPlan({
               return (
                 <article
                   key={dateKey}
-                  className={`flex w-[78vw] max-w-[270px] shrink-0 snap-start flex-col overflow-hidden rounded-3xl border sm:w-auto sm:max-w-none ${isToday ? "border-emerald-300 bg-emerald-50/70 dark:border-emerald-400/25 dark:bg-emerald-400/[0.06]" : "border-stone-200 bg-white dark:border-white/[0.07] dark:bg-white/[0.035]"}`}
+                  className={`flex w-[78vw] max-w-[270px] shrink-0 snap-start flex-col overflow-hidden rounded-3xl border transition-all sm:w-auto sm:max-w-none 
+                    ${
+                      isToday
+                        ? "relative z-10 border-emerald-400 bg-white shadow-lg shadow-black/10 sm:-translate-y-1 dark:border-emerald-500/40 dark:bg-white/[0.035] dark:shadow-black/30"
+                        : "border-stone-200 bg-white dark:border-white/[0.07] dark:bg-white/[0.035]"
+                    }`}
                 >
                   <header
-                    className={`border-b px-4 py-4 ${isToday ? "border-emerald-200/70 dark:border-emerald-400/15" : "border-stone-100 dark:border-white/[0.06]"}`}
+                    className={`border-b px-4 py-4 ${
+                      isToday
+                        ? "border-emerald-600 bg-emerald-700 dark:border-emerald-500 dark:bg-emerald-700"
+                        : "border-stone-100 dark:border-white/[0.06]"
+                    }`}
                   >
                     <div className="flex items-start justify-between gap-2">
                       <div>
                         <p
-                          className={`text-sm font-semibold ${isToday ? "text-emerald-900 dark:text-emerald-300" : "text-stone-800 dark:text-stone-200"}`}
+                          className={`text-sm font-semibold ${isToday ? "text-white" : "text-stone-800 dark:text-stone-200"}`}
                         >
                           {date.toLocaleDateString(undefined, {
                             weekday: "short",
                           })}
                         </p>
 
-                        <p className="mt-0.5 text-sm text-stone-500 dark:text-stone-400">
+                        <p
+                          className={`mt-0.5 text-sm ${isToday ? "text-emerald-100" : "text-stone-500 dark:text-stone-400"}`}
+                        >
                           {date.toLocaleDateString(undefined, {
                             day: "numeric",
                             month: "short",
@@ -102,17 +113,11 @@ function WeeklyMealPlan({
                         type="button"
                         aria-label={`Add meal to ${date.toLocaleDateString()}`}
                         onClick={() => setAddingDate(date)}
-                        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-stone-100 text-stone-500 transition hover:bg-emerald-100 hover:text-emerald-800 dark:bg-white/[0.06] dark:text-stone-400 dark:hover:bg-emerald-400/10 dark:hover:text-emerald-400"
+                        className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full transition ${isToday ? "bg-white/15 text-white hover:bg-white/25" : "bg-stone-100 text-stone-500 hover:bg-emerald-100 hover:text-emerald-800 dark:bg-white/[0.06] dark:text-stone-400 dark:hover:bg-emerald-400/10 dark:hover:text-emerald-400"}`}
                       >
                         <Plus size={15} />
                       </button>
                     </div>
-
-                    {isToday && (
-                      <span className="mt-2 inline-flex rounded-full bg-emerald-700 px-2.5 py-1 text-[11px] font-semibold text-white dark:bg-emerald-600">
-                        Today
-                      </span>
-                    )}
                   </header>
 
                   <div className="flex flex-1 flex-col gap-3 p-3">
