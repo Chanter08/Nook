@@ -51,7 +51,7 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-    runner-test:
+  runner-test:
     name: Home Server Runner Test
     needs: release
     runs-on: [self-hosted, windows, x64]
