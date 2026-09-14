@@ -54,7 +54,7 @@ function WeeklyMealPlan({
           Next 7 days
         </h2>
         <p className="mt-1 text-sm text-stone-400 dark:text-stone-500">
-          Meals planned from today onwards
+          Your meals for the next 7 days
         </p>
       </div>
 
@@ -64,7 +64,7 @@ function WeeklyMealPlan({
         </div>
       ) : (
         <div className="-mx-6 overflow-x-auto px-6 pb-6 pt-2 sm:mx-0 sm:px-2">
-          <div className="flex min-w-max snap-x snap-mandatory gap-3 sm:grid sm:min-w-0 sm:grid-cols-7 sm:gap-2">
+          <div className="flex min-w-max snap-x snap-mandatory items-stretch gap-3">
             {days.map((date) => {
               const dateKey = getDateKey(date);
               const isToday = dateKey === todayKey;
@@ -75,7 +75,7 @@ function WeeklyMealPlan({
               return (
                 <article
                   key={dateKey}
-                  className={`flex w-[78vw] max-w-[270px] shrink-0 snap-start flex-col overflow-hidden rounded-3xl border transition-all sm:w-auto sm:max-w-none 
+                  className={`flex h-[560px] w-[78vw] max-w-[300px] shrink-0 snap-start flex-col overflow-hidden rounded-3xl border transition-all sm:w-[240px] sm:max-w-none lg:w-[260px]
                     ${
                       isToday
                         ? "relative z-10 border-emerald-400 bg-white shadow-lg shadow-black/10 sm:-translate-y-1 dark:border-emerald-500/40 dark:bg-white/[0.035] dark:shadow-black/30"
@@ -120,7 +120,7 @@ function WeeklyMealPlan({
                     </div>
                   </header>
 
-                  <div className="flex flex-1 flex-col gap-3 p-3">
+                  <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto p-3">
                     {dayMeals.length > 0 ? (
                       dayMeals.map((meal) => (
                         <div

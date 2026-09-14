@@ -50,3 +50,16 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+    runner-test:
+    name: Home Server Runner Test
+    needs: release
+    runs-on: [self-hosted, windows, x64]
+
+    steps:
+      - name: Confirm home server runner
+        shell: powershell
+        run: |
+          Write-Host "Runner is alive on $env:COMPUTERNAME"
+          docker --version
+          docker compose version
