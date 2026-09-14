@@ -12,7 +12,7 @@ Write-Host ""
 
 # 1. Pull the new application image
 Write-Host "Pulling latest Nook image..."
-docker compose pull nook
+docker compose --env-file .env pull nook
 Assert-LastCommandSucceeded "Failed to pull the latest Nook image."
 
 # 2. Back up the current database
@@ -24,23 +24,23 @@ Write-Host "Backing up database..."
 # SQL Server stays running.
 Write-Host ""
 Write-Host "Stopping current Nook container..."
-docker compose stop nook
+docker compose --env-file .env stop nook
 Assert-LastCommandSucceeded "Failed to stop Nook."
 
 # 4. Apply EF Core migrations using the NEW image
 Write-Host ""
 Write-Host "Applying database migrations..."
-docker compose run --rm nook --migrate
+docker compose --env-file .env run --rm nook --migrate
 Assert-LastCommandSucceeded "Database migration failed. Nook has NOT been restarted."
 
 # 5. Start/recreate Nook using the new image
 Write-Host ""
 Write-Host "Starting new Nook version..."
-docker compose up -d --force-recreate nook
+docker compose --env-file .env up -d --force-recreate nook
 Assert-LastCommandSucceeded "Failed to start Nook."
 
 # 6. Discover the configured host port
-$portMapping = docker compose port nook 8080
+$portMapping = docker compose --env-file .env port nook 8080
 Assert-LastCommandSucceeded "Could not determine Nook's host port."
 
 $hostPort = ($portMapping.Trim() -split ":")[-1]
@@ -72,7 +72,7 @@ if (-not $healthy) {
     Write-Host ""
     Write-Host "Nook failed its health check."
     Write-Host ""
-    docker compose logs --tail=100 nook
+    docker compose --env-file .env logs --tail=100 nook
 
     throw "Deployment failed health check."
 }
