@@ -51,12 +51,31 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
+          
+
   deploy:
     name: Deploy Home Server
     needs: release
     runs-on: [self-hosted, windows, x64]
 
     steps:
+      - name: Check home server Docker
+        shell: cmd
+        env:
+          NOOK_DEPLOY_PATH: ${{ vars.NOOK_DEPLOY_PATH }}
+        run: |
+          whoami
+          cd /d "%NOOK_DEPLOY_PATH%"
+          echo === Files ===
+          dir
+          echo === Docker engine ===
+          docker version
+          docker info
+          echo === Compose config ===
+          docker compose --env-file .env -f docker-compose.yml config --services
+          echo === Pull test ===
+          docker compose --env-file .env -f docker-compose.yml pull nook
+          
       - name: Deploy Nook
         shell: cmd
         env:
