@@ -62,4 +62,4 @@ jobs:
         env:
           NOOK_DEPLOY_PATH: ${{ vars.NOOK_DEPLOY_PATH }}
         run: |
-          powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%NOOK_DEPLOY_PATH% \deploy.ps1""
+          powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%NOOK_DEPLOY_PATH%\deploy.ps1""
