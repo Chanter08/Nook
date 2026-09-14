@@ -51,15 +51,13 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-  runner-test:
-    name: Home Server Runner Test
+  deploy:
+    name: Deploy Home Server
     needs: release
     runs-on: [self-hosted, windows, x64]
 
     steps:
-      - name: Confirm home server runner
+      - name: Deploy Nook
         shell: cmd
         run: |
-          echo Runner is alive on %COMPUTERNAME%
-          docker --version
-          docker compose version
+          powershell.exe -NoProfile -ExecutionPolicy Bypass -File "C:\Nook\deploy\deploy.ps1"
