@@ -54,7 +54,7 @@ function WeeklyMealPlan({
           Next 7 days
         </h2>
         <p className="mt-1 text-sm text-stone-400 dark:text-stone-500">
-          Meals planned from today onwards
+          Your meals for the next 7 days
         </p>
       </div>
 
