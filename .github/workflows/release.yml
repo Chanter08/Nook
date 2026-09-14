@@ -60,4 +60,4 @@ jobs:
       - name: Deploy Nook
         shell: cmd
         run: |
-          powershell.exe -NoProfile -ExecutionPolicy Bypass -File "C:\Nook\deploy\deploy.ps1"
+          powershell.exe -NoProfile -ExecutionPolicy Bypass -File "${{env.PATH_TO_DEPLOY}}"
