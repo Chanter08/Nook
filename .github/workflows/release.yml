@@ -58,8 +58,8 @@ jobs:
 
     steps:
       - name: Confirm home server runner
-        shell: powershell
+        shell: cmd
         run: |
-          Write-Host "Runner is alive on $env:COMPUTERNAME"
+          echo Runner is alive on %COMPUTERNAME%
           docker --version
           docker compose version
