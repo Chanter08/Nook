@@ -59,7 +59,20 @@ builder.Services.AddHttpClient<SpoonacularProvider>((services, client) =>
 builder.Services.AddScoped<IRecipeDiscoveryProvider>(services =>
     services.GetRequiredService<SpoonacularProvider>());
 
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("NookMobile", policy =>
+    {
+        policy
+            .WithOrigins("capacitor://localhost", "http://localhost")
+            .AllowAnyHeader()
+            .AllowAnyMethod();
+    });
+});
+
 var app = builder.Build();
+
+app.UseCors("NookMobile");
 
 if (args.Any(x => x.Equals("--migrate", StringComparison.OrdinalIgnoreCase)))
 {
