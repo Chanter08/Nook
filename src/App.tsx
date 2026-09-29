@@ -13,7 +13,7 @@ import DiscoverRecipePage from "@/pages/DiscoverRecipe";
 
 function App() {
   return (
-    <div className="min-h-dvh overflow-x-hidden bg-stone-100 text-stone-900 transition-colors dark:bg-stone-950 dark:text-stone-100">
+    <div className="min-h-dvh overflow-x-hidden bg-stone-100 pt-[env(safe-area-inset-top)] text-stone-900 transition-colors dark:bg-stone-950 dark:text-stone-100">
       <div className="mx-auto min-h-dvh w-full max-w-5xl overflow-x-hidden bg-white shadow-xl transition-colors dark:bg-stone-900">
         <Routes>
           <Route path="/" element={<HomePage />} />
