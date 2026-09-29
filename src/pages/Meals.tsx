@@ -5,6 +5,7 @@ import ThemeToggle from "@/components/ThemeToggle";
 import RecipeCard from "@/components/meals/RecipeCard";
 import RecipeFilters from "@/components/meals/RecipeFilters";
 import { filterRecipes, getRecipeFilterQuery } from "@/lib/recipeFilters";
+import { getRecipes } from "@/api/recipes";
 import type { RecipeSummary } from "@/types/recipe";
 
 function MealsPage() {
@@ -23,14 +24,7 @@ function MealsPage() {
     async function loadRecipes() {
       try {
         setError(false);
-
-        const response = await fetch("/api/recipes");
-
-        if (!response.ok) {
-          throw new Error(`Failed to load recipes: ${response.status}`);
-        }
-
-        const data: RecipeSummary[] = await response.json();
+        const data = await getRecipes();
         setRecipes(data);
       } catch (error) {
         console.error("Recipe error:", error);

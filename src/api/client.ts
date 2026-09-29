@@ -15,6 +15,21 @@ export function apiUrl(path: string) {
   return `${API_URL}${normalizedPath}`;
 }
 
+export function assetUrl(url: string | null | undefined) {
+  if (!url) return null;
+
+  if (
+    url.startsWith("http://") ||
+    url.startsWith("https://") ||
+    url.startsWith("data:") ||
+    url.startsWith("blob:")
+  ) {
+    return url;
+  }
+
+  return apiUrl(url);
+}
+
 async function getErrorMessage(response: Response) {
   try {
     const body = await response.json();

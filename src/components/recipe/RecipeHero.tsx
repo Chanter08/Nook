@@ -1,4 +1,5 @@
 import { ArrowLeft, UtensilsCrossed } from "lucide-react";
+import { assetUrl } from "@/api/client";
 import ThemeToggle from "@/components/ThemeToggle";
 
 interface RecipeHeroProps {
@@ -8,10 +9,12 @@ interface RecipeHeroProps {
 }
 
 function RecipeHero({ name, imageUrl, onBack }: RecipeHeroProps) {
+  const imageSrc = assetUrl(imageUrl);
+
   return (
     <section className="relative">
-      {imageUrl ? (
-        <img src={imageUrl} alt={name} className="h-72 w-full object-cover sm:h-96 sm:rounded-b-[2.5rem]" />
+      {imageSrc ? (
+        <img src={imageSrc} alt={name} className="h-72 w-full object-cover sm:h-96 sm:rounded-b-[2.5rem]" />
       ) : (
         <div className="flex h-72 w-full items-center justify-center bg-stone-100 text-stone-400 dark:bg-white/[0.05] dark:text-stone-500 sm:h-96 sm:rounded-b-[2.5rem]">
           <UtensilsCrossed size={42} />
