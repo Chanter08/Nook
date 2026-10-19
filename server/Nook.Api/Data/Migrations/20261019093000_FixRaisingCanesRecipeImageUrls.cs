@@ -18,7 +18,7 @@ public partial class FixRaisingCanesRecipeImageUrls : Migration
     protected override void Up(MigrationBuilder migrationBuilder)
     {
         migrationBuilder.Sql(
-            """
+            @"
             UPDATE [Recipe]
 SET [ImageUrl] = N'https://upload.wikimedia.org/wikipedia/commons/0/0c/Chicken_fingers_at_Raising_Cane%27s_in_Baton_Rouge%2C_Louisiana.jpg'
 WHERE [Name] = N'Raising Cane''s-Style Chicken Tenders'
@@ -39,7 +39,7 @@ WHERE [Name] = N'Garlic-Butter Texas Toast (Cane''s-Style)'
 SET [ImageUrl] = N'https://upload.wikimedia.org/wikipedia/commons/1/18/French_fries_crinkle_cut.jpg'
 WHERE [Name] = N'Crispy Crinkle-Cut Fries (Cane''s-Style)'
   AND ([ImageUrl] IS NULL OR [ImageUrl] = N'https://upload.wikimedia.org/wikipedia/commons/thumb/1/18/French_fries_crinkle_cut.jpg/800px-French_fries_crinkle_cut.jpg');
-            """);
+            ");
     }
 
     protected override void Down(MigrationBuilder migrationBuilder)
