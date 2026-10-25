@@ -22,9 +22,20 @@ public class NookDbContext : DbContext
     public DbSet<ShoppingListItem> ShoppingListItems => Set<ShoppingListItem>();
     public DbSet<ShoppingCatalogItem> ShoppingCatalogItems => Set<ShoppingCatalogItem>();
     public DbSet<MealPlanEntry> MealPlanEntries => Set<MealPlanEntry>();
+    public DbSet<Chore> Chores => Set<Chore>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        modelBuilder.Entity<Chore>(entity =>
+        {
+            entity.ToTable("Chore");
+            entity.HasKey(x => x.ChoreId);
+            entity.Property(x => x.Title).HasMaxLength(150).IsRequired();
+            entity.Property(x => x.AssignedTo).HasMaxLength(80);
+            entity.Property(x => x.Recurrence).HasMaxLength(20).IsRequired();
+            entity.HasIndex(x => new { x.IsCompleted, x.DueDate });
+        });
+
         modelBuilder.Entity<Recipe>(entity =>
         {
             entity.ToTable("Recipe");
