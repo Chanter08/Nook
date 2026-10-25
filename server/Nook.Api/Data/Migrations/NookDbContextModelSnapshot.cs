@@ -22,6 +22,22 @@ namespace Nook.Api.Data.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
+            modelBuilder.Entity("Nook.Api.Models.Chore", b =>
+                {
+                    b.Property<int>("ChoreId").ValueGeneratedOnAdd().HasColumnType("int");
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ChoreId"));
+                    b.Property<string>("AssignedTo").HasMaxLength(80).HasColumnType("nvarchar(80)");
+                    b.Property<DateTime>("CreatedDate").HasColumnType("datetime2");
+                    b.Property<DateOnly?>("DueDate").HasColumnType("date");
+                    b.Property<bool>("IsCompleted").HasColumnType("bit");
+                    b.Property<DateTime?>("LastCompletedDate").HasColumnType("datetime2");
+                    b.Property<string>("Recurrence").IsRequired().HasMaxLength(20).HasColumnType("nvarchar(20)");
+                    b.Property<string>("Title").IsRequired().HasMaxLength(150).HasColumnType("nvarchar(150)");
+                    b.HasKey("ChoreId");
+                    b.HasIndex("IsCompleted", "DueDate");
+                    b.ToTable("Chore", (string)null);
+                });
+
             modelBuilder.Entity("Nook.Api.Models.Cuisine", b =>
                 {
                     b.Property<int>("CuisineId")

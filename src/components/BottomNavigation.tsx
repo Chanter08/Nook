@@ -60,7 +60,6 @@ function BottomNavigation() {
         <span className="text-xs font-medium">Shopping</span>
       </NavLink>
 
-      {/* Not connected yet */}
       <NavLink to="/us" className={navClass}>
         <UserRound size={21} />
         <span className="text-xs font-medium">Us</span>
