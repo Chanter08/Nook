@@ -52,7 +52,7 @@ function HomePage() {
   }
 
   return (
-    <main className="mx-auto flex min-h-dvh w-full max-w-5xl flex-col px-4 pb-28 pt-8 transition-colors sm:px-6 sm:pt-12">
+    <main className="mx-auto flex min-h-dvh w-full max-w-none flex-col px-4 pb-28 pt-8 lg:px-8 2xl:px-12 transition-colors sm:px-6 sm:pt-12">
       <header className="mb-6 flex items-center justify-between">
         <div>
           <p className="text-sm text-stone-500 dark:text-stone-400">

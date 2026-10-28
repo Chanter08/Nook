@@ -74,7 +74,7 @@ function ShoppingPage() {
   );
 
   return (
-    <main className="mx-auto min-h-dvh w-full max-w-3xl px-4 pb-28 pt-8 sm:px-6 sm:pt-12">
+    <main className="mx-auto min-h-dvh w-full max-w-3xl xl:max-w-none px-4 pb-28 pt-8 sm:px-6 lg:px-8 2xl:px-12 sm:pt-12">
       <header className="mb-8">
         <div className="flex items-center justify-between">
           <button
@@ -183,7 +183,7 @@ function ShoppingPage() {
                 </p>
               </div>
             ) : (
-              <div className="space-y-6">
+              <div className="space-y-6 xl:grid xl:grid-cols-2 xl:gap-6 xl:space-y-0">
                 {activeGroups.map((group: ShoppingGroup) => (
                   <div key={group.category}>
                     <div className="mb-2 flex items-center gap-2 px-1">

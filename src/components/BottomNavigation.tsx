@@ -25,7 +25,8 @@ function BottomNavigation() {
     mx-auto
     flex
     w-full
-    max-w-5xl
+    lg:px-8
+    2xl:px-12
     justify-around
     border-t
     border-stone-200

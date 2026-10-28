@@ -64,7 +64,7 @@ function WeeklyMealPlan({
         </div>
       ) : (
         <div className="-mx-6 overflow-x-auto px-6 pb-6 pt-2 sm:mx-0 sm:px-2">
-          <div className="flex min-w-max snap-x snap-mandatory items-stretch gap-3">
+          <div className="flex min-w-max snap-x snap-mandatory items-stretch gap-3 xl:grid xl:min-w-0 xl:grid-cols-7 xl:snap-none">
             {days.map((date) => {
               const dateKey = getDateKey(date);
               const isToday = dateKey === todayKey;
@@ -75,7 +75,7 @@ function WeeklyMealPlan({
               return (
                 <article
                   key={dateKey}
-                  className={`flex h-[560px] w-[78vw] max-w-[300px] shrink-0 snap-start flex-col overflow-hidden rounded-3xl border transition-all sm:w-[240px] sm:max-w-none lg:w-[260px]
+                  className={`flex h-[560px] w-[78vw] max-w-[300px] shrink-0 snap-start flex-col overflow-hidden rounded-3xl border transition-all sm:w-[240px] sm:max-w-none lg:w-[260px] xl:min-w-0 xl:w-auto
                     ${
                       isToday
                         ? "relative z-10 border-emerald-400 bg-white shadow-lg shadow-black/10 sm:-translate-y-1 dark:border-emerald-500/40 dark:bg-white/[0.035] dark:shadow-black/30"

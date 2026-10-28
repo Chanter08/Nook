@@ -43,7 +43,7 @@ function DiscoverRecipePage() {
 
   if (loading) {
     return (
-      <main className="mx-auto min-h-dvh w-full max-w-4xl px-4 pb-28 pt-8 sm:px-6">
+      <main className="mx-auto min-h-dvh w-full max-w-4xl xl:max-w-none px-4 pb-28 pt-8 sm:px-6 xl:px-8 2xl:px-12">
         <p className="text-sm text-stone-500 dark:text-stone-400">
           Loading recipe...
         </p>
@@ -53,7 +53,7 @@ function DiscoverRecipePage() {
 
   if (error || !recipe) {
     return (
-      <main className="mx-auto min-h-dvh w-full max-w-4xl px-4 pb-28 pt-8 sm:px-6">
+      <main className="mx-auto min-h-dvh w-full max-w-4xl xl:max-w-none px-4 pb-28 pt-8 sm:px-6 xl:px-8 2xl:px-12">
         <button type="button" onClick={() => navigate(-1)} className="mb-6 flex items-center gap-2 text-sm font-medium text-stone-700 dark:text-stone-200">
           <ArrowLeft size={18} />
           Back
@@ -72,7 +72,7 @@ function DiscoverRecipePage() {
   }
 
   return (
-    <main className="mx-auto min-h-dvh w-full max-w-4xl pb-28 text-stone-900 dark:text-stone-100">
+    <main className="mx-auto min-h-dvh w-full max-w-4xl xl:max-w-none pb-28 text-stone-900 dark:text-stone-100">
       <div className="relative">
         {recipe.imageUrl ? (
           <img src={recipe.imageUrl} alt={recipe.name} className="h-[320px] w-full object-cover sm:h-[420px]" />
@@ -93,7 +93,7 @@ function DiscoverRecipePage() {
         </div>
       </div>
 
-      <div className="mx-auto max-w-3xl px-4 pt-6 sm:px-6">
+      <div className="mx-auto max-w-3xl px-4 pt-6 xl:max-w-none sm:px-6 xl:px-8 2xl:px-12">
         <div className="flex flex-wrap gap-2">
           {recipe.category && (
             <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-800 dark:bg-emerald-400/10 dark:text-emerald-300">

@@ -171,7 +171,7 @@ function AddRecipePage() {
   const labelClass = "text-sm font-medium text-stone-700 dark:text-stone-300";
 
   return (
-    <main className="mx-auto min-h-dvh w-full max-w-3xl px-4 pb-32 pt-8 sm:px-6 sm:pt-12">
+    <main className="mx-auto min-h-dvh w-full max-w-3xl xl:max-w-none px-4 pb-32 pt-8 sm:px-6 lg:px-8 2xl:px-12 sm:pt-12">
       <header className="mb-8 flex items-center justify-between">
         <button type="button" aria-label="Go back" onClick={() => navigate(-1)} className="flex h-11 w-11 items-center justify-center rounded-full bg-stone-100 text-stone-700 transition hover:bg-stone-200 dark:bg-white/[0.06] dark:text-stone-200">
           <ArrowLeft size={20} />

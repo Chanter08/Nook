@@ -46,7 +46,7 @@ function PlansPage() {
   }, []);
 
   return (
-    <main className="mx-auto min-h-dvh w-full max-w-5xl px-4 pb-28 pt-8 text-stone-900 transition-colors dark:text-stone-100 sm:px-6 sm:pt-12">
+    <main className="mx-auto min-h-dvh w-full max-w-5xl xl:max-w-none px-4 pb-28 pt-8 text-stone-900 transition-colors dark:text-stone-100 sm:px-6 lg:px-8 2xl:px-12 sm:pt-12">
       <header className="mb-8 flex items-start justify-between">
         <div>
           <p className="text-sm text-stone-500 dark:text-stone-400">

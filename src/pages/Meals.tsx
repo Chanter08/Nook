@@ -87,7 +87,7 @@ function MealsPage() {
   }
 
   return (
-    <main className="mx-auto min-h-dvh w-full max-w-5xl px-4 pb-28 pt-8 transition-colors sm:px-6 sm:pt-12">
+    <main className="mx-auto min-h-dvh w-full max-w-5xl xl:max-w-none px-4 pb-28 pt-8 transition-colors sm:px-6 lg:px-8 2xl:px-12 sm:pt-12">
       <header className="mb-8 flex items-start justify-between">
         <div>
           <p className="text-sm text-stone-500 dark:text-stone-400">
@@ -206,7 +206,7 @@ function MealsPage() {
         )}
 
       {!loading && !error && filteredRecipes.length > 0 && (
-        <section className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+        <section className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
           {filteredRecipes.map((recipe) => (
             <RecipeCard key={recipe.id} recipe={recipe} query={recipeQuery} />
           ))}

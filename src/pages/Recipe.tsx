@@ -207,7 +207,7 @@ function RecipePage() {
 
   if (loading) {
     return (
-      <main className="mx-auto min-h-dvh w-full max-w-4xl px-4 pb-28 pt-8 text-stone-900 dark:text-stone-100 sm:px-6">
+      <main className="mx-auto min-h-dvh w-full max-w-4xl xl:max-w-none px-4 pb-28 pt-8 text-stone-900 dark:text-stone-100 sm:px-6 xl:px-8 2xl:px-12">
         <p className="text-sm text-stone-500 dark:text-stone-400">
           Loading recipe...
         </p>
@@ -217,7 +217,7 @@ function RecipePage() {
 
   if (error || !recipe) {
     return (
-      <main className="mx-auto min-h-dvh w-full max-w-4xl px-4 pb-28 pt-8 sm:px-6">
+      <main className="mx-auto min-h-dvh w-full max-w-4xl xl:max-w-none px-4 pb-28 pt-8 sm:px-6 xl:px-8 2xl:px-12">
         <button
           type="button"
           onClick={() => navigate(-1)}
@@ -241,7 +241,7 @@ function RecipePage() {
 
   return (
     <main
-      className="mx-auto min-h-dvh w-full max-w-4xl pb-28 text-stone-900 transition-colors dark:text-stone-100"
+      className="mx-auto min-h-dvh w-full max-w-4xl xl:max-w-none pb-28 text-stone-900 transition-colors dark:text-stone-100"
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
     >
@@ -251,7 +251,7 @@ function RecipePage() {
         onBack={() => navigate(-1)}
       />
 
-      <div className="px-4 pt-6 sm:px-6">
+      <div className="px-4 pt-6 sm:px-6 xl:px-8 2xl:px-12">
         {recipe.mealTypes.length > 0 && (
           <div className="mb-3 flex flex-wrap gap-2">
             {recipe.mealTypes.map((type) => (

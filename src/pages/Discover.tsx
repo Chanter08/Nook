@@ -70,7 +70,7 @@ function DiscoverPage() {
   }
   
   return (
-    <main className="mx-auto min-h-dvh w-full max-w-5xl px-4 pb-28 pt-8 transition-colors sm:px-6 sm:pt-12">
+    <main className="mx-auto min-h-dvh w-full max-w-5xl xl:max-w-none px-4 pb-28 pt-8 transition-colors sm:px-6 lg:px-8 2xl:px-12 sm:pt-12">
       <header className="mb-8 flex items-start justify-between gap-4">
         <div className="flex items-start gap-3">
           <button type="button" aria-label="Back to meals" onClick={() => navigate("/meals")} className="mt-1 flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-stone-100 text-stone-600 transition hover:bg-stone-200 dark:bg-white/[0.06] dark:text-stone-300 dark:hover:bg-white/[0.1]">
@@ -155,7 +155,7 @@ function DiscoverPage() {
             {recipes.length} {recipes.length === 1 ? "recipe" : "recipes"} found
           </p>
 
-          <section className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          <section className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
             {recipes.map((recipe) => (
               <DiscoverRecipeCard key={`${recipe.provider}-${recipe.externalId}`} recipe={recipe} />
             ))}
