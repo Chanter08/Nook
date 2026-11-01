@@ -227,7 +227,11 @@ public class PantryService
             existing.Category ??= category ?? catalogItem.Category;
             existing.Notes ??= notes;
             existing.LowStockThreshold ??= threshold;
-            existing.LastPurchasedDate ??= purchaseDate;
+            if (purchaseDate.HasValue)
+            {
+                existing.LastPurchasedDate = purchaseDate;
+            }
+
             existing.Source = source == "receipt"
                 ? "receipt"
                 : existing.Source;
