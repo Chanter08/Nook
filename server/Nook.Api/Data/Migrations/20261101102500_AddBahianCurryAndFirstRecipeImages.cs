@@ -25,7 +25,7 @@ public partial class AddBahianCurryAndFirstRecipeImages : Migration
               AND ([ImageUrl] IS NULL OR LTRIM(RTRIM([ImageUrl])) = N'');
 
             UPDATE [Recipe]
-            SET [ImageUrl] = N'https://www.themediterraneandish.com/wp-content/uploads/2023/10/butternut-squash-pasta-recipe-8.jpg'
+            SET [ImageUrl] = N'https://res.cloudinary.com/hz3gmuqw6/image/upload/c_fill%2Ch_600%2Cq_auto%2Cw_800/f_auto/v1/recipes/DSCF0698_644ee8644a668'
             WHERE LOWER([Name]) = LOWER(N'Creamy Butternut Squash and Italian Pepper Pasta')
               AND ([ImageUrl] IS NULL OR LTRIM(RTRIM([ImageUrl])) = N'');
 
