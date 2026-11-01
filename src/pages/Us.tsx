@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
-import { CheckCircle2, Plus, Sparkles } from "lucide-react";
+import { CheckCircle2, ChevronRight, PackageOpen, Plus, Sparkles } from "lucide-react";
+import { Link } from "react-router-dom";
 import ThemeToggle from "@/components/ThemeToggle";
 import AddChoreForm from "@/components/chores/AddChoreForm";
 import ChoreRow from "@/components/chores/ChoreRow";
@@ -24,6 +25,12 @@ function UsPage() {
         <div><p className="text-sm font-medium text-emerald-800 dark:text-emerald-400">Our home</p><h1 className="mt-1 text-3xl font-semibold tracking-tight text-stone-900 dark:text-stone-100">Us</h1></div>
         <ThemeToggle />
       </header>
+
+      <Link to="/pantry" className="mt-8 flex items-center gap-4 rounded-3xl border border-stone-200 bg-white p-5 transition hover:border-emerald-300 hover:bg-emerald-50/40 dark:border-white/[0.07] dark:bg-white/[0.035] dark:hover:border-emerald-400/20 dark:hover:bg-emerald-400/[0.06]">
+        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-900 dark:bg-emerald-400/10 dark:text-emerald-300"><PackageOpen size={22} /></div>
+        <div className="min-w-0 flex-1"><p className="font-semibold text-stone-900 dark:text-stone-100">Pantry & inventory</p><p className="mt-1 text-sm text-stone-500 dark:text-stone-400">Track cupboards, fridge, freezer and expiry dates.</p></div>
+        <ChevronRight size={19} className="shrink-0 text-stone-400" />
+      </Link>
 
       <section className="mt-8">
         <div className="mb-5 flex items-end justify-between gap-4">

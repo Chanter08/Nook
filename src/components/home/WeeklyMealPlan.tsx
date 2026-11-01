@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import type { PlannedMeal } from "@/types/mealPlan";
-import { Plus, Trash2, UtensilsCrossed } from "lucide-react";
+import { BriefcaseBusiness, Plus, Trash2, UtensilsCrossed } from "lucide-react";
+import { getCalendarEventDateKey, isDutyEvent } from "@/lib/calendarEvents";
 import { useState } from "react";
 import AddMealPlanModal from "@/components/home/AddMealPlanModal";
 import type { WeeklyMealPlanProps } from "@/types/weeklyMealPlan";
@@ -30,6 +31,7 @@ function sortMeals(meals: PlannedMeal[]) {
 function WeeklyMealPlan({
   startDate,
   meals,
+  events,
   loading,
   onRefresh,
   onRemove,
@@ -71,6 +73,7 @@ function WeeklyMealPlan({
               const dayMeals = sortMeals(
                 meals.filter((meal) => meal.date === dateKey),
               );
+              const dutyEvents = events.filter((event) => isDutyEvent(event) && getCalendarEventDateKey(event) === dateKey);
 
               return (
                 <article
@@ -109,14 +112,17 @@ function WeeklyMealPlan({
                         </p>
                       </div>
 
-                      <button
+                      <div className="flex items-center gap-2">
+                        {dutyEvents.length > 0 && <span title={dutyEvents.map((event) => event.title).join(", ")} className={`inline-flex items-center gap-1 rounded-full px-2 py-1 text-[11px] font-bold uppercase tracking-wide ${isToday ? "bg-amber-300 text-amber-950" : "bg-amber-100 text-amber-800 dark:bg-amber-400/15 dark:text-amber-300"}`}><BriefcaseBusiness size={12} />Duty</span>}
+                        <button
                         type="button"
                         aria-label={`Add meal to ${date.toLocaleDateString()}`}
                         onClick={() => setAddingDate(date)}
                         className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full transition ${isToday ? "bg-white/15 text-white hover:bg-white/25" : "bg-stone-100 text-stone-500 hover:bg-emerald-100 hover:text-emerald-800 dark:bg-white/[0.06] dark:text-stone-400 dark:hover:bg-emerald-400/10 dark:hover:text-emerald-400"}`}
                       >
                         <Plus size={15} />
-                      </button>
+                        </button>
+                      </div>
                     </div>
                   </header>
 

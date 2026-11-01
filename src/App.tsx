@@ -10,6 +10,7 @@ import AddRecipePage from "@/pages/AddRecipe";
 import UsPage from "@/pages/Us";
 import DiscoverPage from "@/pages/Discover";
 import DiscoverRecipePage from "@/pages/DiscoverRecipe";
+import PantryPage from "@/pages/Pantry";
 
 function App() {
   return (
@@ -26,6 +27,7 @@ function App() {
           <Route path="/meals/new" element={<AddRecipePage />} />
           
           <Route path="/us" element={<UsPage />} />
+          <Route path="/pantry" element={<PantryPage />} />
         </Routes>
         <BottomNavigation />
       </div>

@@ -89,6 +89,7 @@ function HomePage() {
 
       <WeeklyMealPlan
         startDate={planStart}
+        events={events}
         meals={meals}
         loading={mealPlanLoading}
         onRefresh={refreshMealPlan}
