@@ -314,15 +314,19 @@ public class PantryService
         string? notes)
     {
         ShoppingCatalogItem? catalogItem = null;
+        var normalizedName = NormalizeName(name);
 
         if (requestedId.HasValue)
         {
-            catalogItem = await _db.ShoppingCatalogItems
+            var requestedItem = await _db.ShoppingCatalogItems
                 .FirstOrDefaultAsync(x =>
                     x.ShoppingCatalogItemId == requestedId.Value);
-        }
 
-        var normalizedName = NormalizeName(name);
+            if (requestedItem?.NormalizedName == normalizedName)
+            {
+                catalogItem = requestedItem;
+            }
+        }
 
         catalogItem ??= _db.ShoppingCatalogItems.Local
             .FirstOrDefault(x => x.NormalizedName == normalizedName);
