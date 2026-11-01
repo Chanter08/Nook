@@ -1,9 +1,19 @@
 import { Link } from "react-router-dom";
 import type { PlannedMeal } from "@/types/mealPlan";
-import { Plus, Trash2, UtensilsCrossed } from "lucide-react";
+import {
+  BriefcaseBusiness,
+  CalendarDays,
+  Plus,
+  Trash2,
+  UtensilsCrossed,
+} from "lucide-react";
 import { useState } from "react";
 import AddMealPlanModal from "@/components/home/AddMealPlanModal";
 import type { WeeklyMealPlanProps } from "@/types/weeklyMealPlan";
+import {
+  getCalendarEventDateKey,
+  getMealPlanningEventKind,
+} from "@/lib/calendarEvents";
 
 const mealTypeOrder = ["Breakfast", "Lunch", "Dinner", "Snack"];
 
@@ -30,6 +40,7 @@ function sortMeals(meals: PlannedMeal[]) {
 function WeeklyMealPlan({
   startDate,
   meals,
+  events,
   loading,
   onRefresh,
   onRemove,
@@ -71,6 +82,20 @@ function WeeklyMealPlan({
               const dayMeals = sortMeals(
                 meals.filter((meal) => meal.date === dateKey),
               );
+              const dayEvents = events.filter(
+                (event) => getCalendarEventDateKey(event) === dateKey,
+              );
+              const planningEvent =
+                dayEvents.find(
+                  (event) => getMealPlanningEventKind(event) === "duty",
+                ) ??
+                dayEvents.find(
+                  (event) => getMealPlanningEventKind(event) === "leave",
+                ) ??
+                dayEvents[0];
+              const planningKind = planningEvent
+                ? getMealPlanningEventKind(planningEvent)
+                : null;
 
               return (
                 <article
@@ -79,14 +104,22 @@ function WeeklyMealPlan({
                     ${
                       isToday
                         ? "relative z-10 border-emerald-400 bg-white shadow-lg shadow-black/10 sm:-translate-y-1 dark:border-emerald-500/40 dark:bg-white/[0.035] dark:shadow-black/30"
-                        : "border-stone-200 bg-white dark:border-white/[0.07] dark:bg-white/[0.035]"
+                        : planningKind === "duty"
+                          ? "border-amber-300 bg-white dark:border-amber-400/25 dark:bg-white/[0.035]"
+                          : planningKind === "leave"
+                            ? "border-sky-200 bg-white dark:border-sky-400/20 dark:bg-white/[0.035]"
+                            : "border-stone-200 bg-white dark:border-white/[0.07] dark:bg-white/[0.035]"
                     }`}
                 >
                   <header
                     className={`border-b px-4 py-4 ${
                       isToday
                         ? "border-emerald-600 bg-emerald-700 dark:border-emerald-500 dark:bg-emerald-700"
-                        : "border-stone-100 dark:border-white/[0.06]"
+                        : planningKind === "duty"
+                          ? "border-amber-100 bg-amber-50/70 dark:border-amber-400/10 dark:bg-amber-400/[0.05]"
+                          : planningKind === "leave"
+                            ? "border-sky-100 bg-sky-50/70 dark:border-sky-400/10 dark:bg-sky-400/[0.04]"
+                            : "border-stone-100 dark:border-white/[0.06]"
                     }`}
                   >
                     <div className="flex items-start justify-between gap-2">
@@ -107,6 +140,38 @@ function WeeklyMealPlan({
                             month: "short",
                           })}
                         </p>
+
+                        {planningEvent && (
+                          <span
+                            title={dayEvents
+                              .map((event) => event.title)
+                              .join(", ")}
+                            className={`mt-2 inline-flex items-center gap-1 rounded-full px-2 py-1 text-[10px] font-bold uppercase tracking-wide ${
+                              planningKind === "duty"
+                                ? isToday
+                                  ? "bg-amber-300 text-amber-950"
+                                  : "bg-amber-100 text-amber-800 dark:bg-amber-400/15 dark:text-amber-300"
+                                : planningKind === "leave"
+                                  ? isToday
+                                    ? "bg-sky-200 text-sky-950"
+                                    : "bg-sky-100 text-sky-800 dark:bg-sky-400/15 dark:text-sky-300"
+                                  : isToday
+                                    ? "bg-white/20 text-white"
+                                    : "bg-stone-100 text-stone-600 dark:bg-white/[0.08] dark:text-stone-300"
+                            }`}
+                          >
+                            {planningKind === "duty" ? (
+                              <BriefcaseBusiness size={11} />
+                            ) : (
+                              <CalendarDays size={11} />
+                            )}
+                            {planningKind === "duty"
+                              ? "Duty · prep"
+                              : planningKind === "leave"
+                                ? "Leave"
+                                : "Event"}
+                          </span>
+                        )}
                       </div>
 
                       <button
@@ -181,7 +246,13 @@ function WeeklyMealPlan({
                             className="mx-auto text-stone-300 dark:text-stone-600"
                           />
                           <p className="mt-2 text-sm text-stone-400 dark:text-stone-500">
-                            Nothing planned
+                            {planningKind === "duty"
+                              ? "Duty day — prep food"
+                              : planningKind === "leave"
+                                ? "Leave day — check meals"
+                                : planningKind === "event"
+                                  ? "Event day — check meal plan"
+                                  : "Nothing planned"}
                           </p>
                         </div>
                       </div>

@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
-import { CalendarDays } from "lucide-react";
+import { BriefcaseBusiness, CalendarDays } from "lucide-react";
 import ThemeToggle from "@/components/ThemeToggle";
 import type { CalendarEvent } from "@/types/calendar";
 import { getUpcomingCalendarEvents } from "@/api/calendar";
+import { getMealPlanningEventKind } from "@/lib/calendarEvents";
 
 function formatDate(event: CalendarEvent) {
   return new Intl.DateTimeFormat("en-GB", {
@@ -117,23 +118,56 @@ function PlansPage() {
 
           {!loading &&
             !calendarError &&
-            events.map((event, index) => (
-              <div key={`${event.id}-${event.start}`} className={`flex w-full items-center gap-4 p-4 ${index !== events.length - 1 ? "border-b border-stone-100 dark:border-white/[0.06]" : ""}`}>
+            events.map((event, index) => {
+              const planningKind = getMealPlanningEventKind(event);
 
-                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-900 dark:bg-emerald-400/10 dark:text-emerald-300">
-                  <CalendarDays size={21} />
-                </div>
+              return (
+                <div
+                  key={`${event.id}-${event.start}`}
+                  className={`flex w-full items-center gap-4 p-4 ${
+                    planningKind === "duty"
+                      ? "bg-amber-50/70 dark:bg-amber-400/[0.05]"
+                      : planningKind === "leave"
+                        ? "bg-sky-50/60 dark:bg-sky-400/[0.04]"
+                        : ""
+                  } ${
+                    index !== events.length - 1
+                      ? "border-b border-stone-100 dark:border-white/[0.06]"
+                      : ""
+                  }`}
+                >
+                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-900 dark:bg-emerald-400/10 dark:text-emerald-300">
+                    <CalendarDays size={21} />
+                  </div>
 
-                <div className="min-w-0 flex-1">
-                  <p className="truncate font-medium text-stone-900 dark:text-stone-100">
-                    {event.title}
-                  </p>
-                  <p className="mt-1 text-sm text-stone-500 dark:text-stone-400">
-                    {formatDate(event)} · {formatTime(event)}
-                  </p>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                      <p className="truncate font-medium text-stone-900 dark:text-stone-100">
+                        {event.title}
+                      </p>
+
+                      {planningKind === "duty" && (
+                        <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-amber-100 px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-amber-800 dark:bg-amber-400/15 dark:text-amber-300">
+                          <BriefcaseBusiness size={11} />
+                          Duty · prep
+                        </span>
+                      )}
+
+                      {planningKind === "leave" && (
+                        <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-sky-100 px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-sky-800 dark:bg-sky-400/15 dark:text-sky-300">
+                          <CalendarDays size={11} />
+                          Leave
+                        </span>
+                      )}
+                    </div>
+
+                    <p className="mt-1 text-sm text-stone-500 dark:text-stone-400">
+                      {formatDate(event)} · {formatTime(event)}
+                    </p>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
         </div>
       </section>
     </main>
