@@ -23,6 +23,7 @@ public class NookDbContext : DbContext
     public DbSet<ShoppingCatalogItem> ShoppingCatalogItems => Set<ShoppingCatalogItem>();
     public DbSet<MealPlanEntry> MealPlanEntries => Set<MealPlanEntry>();
     public DbSet<Chore> Chores => Set<Chore>();
+    public DbSet<PantryItem> PantryItems => Set<PantryItem>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -209,6 +210,52 @@ public class NookDbContext : DbContext
             .HasForeignKey(x =>
                 x.ShoppingCatalogItemId)
             .OnDelete(DeleteBehavior.NoAction);
+
+        modelBuilder.Entity<PantryItem>(entity =>
+        {
+            entity.ToTable("PantryItem");
+
+            entity.HasKey(x => x.PantryItemId);
+
+            entity.Property(x => x.Name)
+                .HasMaxLength(150)
+                .IsRequired();
+
+            entity.Property(x => x.NormalizedName)
+                .HasMaxLength(150)
+                .IsRequired();
+
+            entity.Property(x => x.Quantity)
+                .HasPrecision(10, 2);
+
+            entity.Property(x => x.Unit)
+                .HasMaxLength(50);
+
+            entity.Property(x => x.Category)
+                .HasMaxLength(100);
+
+            entity.Property(x => x.StorageLocation)
+                .HasMaxLength(50)
+                .IsRequired();
+
+            entity.Property(x => x.LowStockThreshold)
+                .HasPrecision(10, 2);
+
+            entity.Property(x => x.Notes)
+                .HasMaxLength(250);
+
+            entity.Property(x => x.Source)
+                .HasMaxLength(30)
+                .IsRequired();
+
+            entity.HasIndex(x => x.NormalizedName);
+            entity.HasIndex(x => x.ExpiryDate);
+
+            entity.HasOne(x => x.ShoppingCatalogItem)
+                .WithMany()
+                .HasForeignKey(x => x.ShoppingCatalogItemId)
+                .OnDelete(DeleteBehavior.NoAction);
+        });
 
         modelBuilder.Entity<MealPlanEntry>(entity =>
          {

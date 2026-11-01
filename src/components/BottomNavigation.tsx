@@ -2,7 +2,7 @@ import {
   CalendarDays,
   Home,
   Utensils,
-  UserRound,
+  Package,
   ShoppingCart,
 } from "lucide-react";
 
@@ -60,9 +60,9 @@ function BottomNavigation() {
         <span className="text-xs font-medium">Shopping</span>
       </NavLink>
 
-      <NavLink to="/us" className={navClass}>
-        <UserRound size={21} />
-        <span className="text-xs font-medium">Us</span>
+      <NavLink to="/pantry" className={navClass}>
+        <Package size={21} />
+        <span className="text-xs font-medium">Pantry</span>
       </NavLink>
     </nav>
   );
