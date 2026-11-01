@@ -75,6 +75,16 @@ namespace Nook.Api.Data.Migrations
                     b.ToTable("Ingredient", (string)null);
                 });
 
+            modelBuilder.Entity("Nook.Api.Models.PantryItem", b =>
+                {
+                    b.HasOne("Nook.Api.Models.ShoppingCatalogItem", "ShoppingCatalogItem")
+                        .WithMany()
+                        .HasForeignKey("ShoppingCatalogItemId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.Navigation("ShoppingCatalogItem");
+                });
+
             modelBuilder.Entity("Nook.Api.Models.MealPlanEntry", b =>
                 {
                     b.Property<int>("MealPlanEntryId")
@@ -105,6 +115,80 @@ namespace Nook.Api.Data.Migrations
                         .IsUnique();
 
                     b.ToTable("MealPlanEntry", (string)null);
+                });
+
+            modelBuilder.Entity("Nook.Api.Models.PantryItem", b =>
+                {
+                    b.Property<int>("PantryItemId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("PantryItemId"));
+
+                    b.Property<string>("Category")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateOnly?>("ExpiryDate")
+                        .HasColumnType("date");
+
+                    b.Property<DateOnly?>("LastPurchasedDate")
+                        .HasColumnType("date");
+
+                    b.Property<decimal?>("LowStockThreshold")
+                        .HasPrecision(10, 2)
+                        .HasColumnType("decimal(10,2)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<string>("NormalizedName")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(250)
+                        .HasColumnType("nvarchar(250)");
+
+                    b.Property<decimal?>("Quantity")
+                        .HasPrecision(10, 2)
+                        .HasColumnType("decimal(10,2)");
+
+                    b.Property<int?>("ShoppingCatalogItemId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Source")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
+
+                    b.Property<string>("StorageLocation")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("Unit")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<DateTime>("UpdatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("PantryItemId");
+
+                    b.HasIndex("ExpiryDate");
+
+                    b.HasIndex("NormalizedName");
+
+                    b.HasIndex("ShoppingCatalogItemId");
+
+                    b.ToTable("PantryItem", (string)null);
                 });
 
             modelBuilder.Entity("Nook.Api.Models.Recipe", b =>
