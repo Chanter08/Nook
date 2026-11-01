@@ -208,29 +208,43 @@ public class ReceiptScannerService
 
         using var document = JsonDocument.Parse(responseText);
 
-        var structuredJson = document.RootElement
-            .GetProperty("output")
-            .EnumerateArray()
-            .Where(x =>
-                x.TryGetProperty("type", out var type) &&
-                type.GetString() == "message")
-            .SelectMany(x =>
-                x.TryGetProperty("content", out var content)
-                    ? content.EnumerateArray().ToArray()
-                    : [])
-            .FirstOrDefault(x =>
-                x.TryGetProperty("type", out var type) &&
-                type.GetString() == "output_text");
+        string? structuredJson = null;
 
-        if (structuredJson.ValueKind == JsonValueKind.Undefined ||
-            !structuredJson.TryGetProperty("text", out var textElement))
+        if (document.RootElement.TryGetProperty("output", out var output))
+        {
+            foreach (var outputItem in output.EnumerateArray())
+            {
+                if (!outputItem.TryGetProperty("content", out var content))
+                {
+                    continue;
+                }
+
+                foreach (var contentItem in content.EnumerateArray())
+                {
+                    if (contentItem.TryGetProperty("type", out var type) &&
+                        type.GetString() == "output_text" &&
+                        contentItem.TryGetProperty("text", out var text))
+                    {
+                        structuredJson = text.GetString();
+                        break;
+                    }
+                }
+
+                if (structuredJson is not null)
+                {
+                    break;
+                }
+            }
+        }
+
+        if (string.IsNullOrWhiteSpace(structuredJson))
         {
             throw new ReceiptScanProviderException(
                 "The receipt could not be interpreted.");
         }
 
         var result = JsonSerializer.Deserialize<ReceiptScanResponse>(
-            textElement.GetString() ?? "{}",
+            structuredJson,
             new JsonSerializerOptions
             {
                 PropertyNameCaseInsensitive = true
