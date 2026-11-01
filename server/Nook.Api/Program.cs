@@ -97,6 +97,7 @@ app.MapShoppingEndpoints();
 app.MapMealPlanEndpoints();
 app.MapDiscoverEndpoints();
 app.MapChoreEndpoints();
+app.MapPantryEndpoints();
 
 app.MapGet("/health", async (NookDbContext db) =>
 {

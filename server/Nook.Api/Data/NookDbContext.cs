@@ -23,6 +23,7 @@ public class NookDbContext : DbContext
     public DbSet<ShoppingCatalogItem> ShoppingCatalogItems => Set<ShoppingCatalogItem>();
     public DbSet<MealPlanEntry> MealPlanEntries => Set<MealPlanEntry>();
     public DbSet<Chore> Chores => Set<Chore>();
+    public DbSet<PantryItem> PantryItems => Set<PantryItem>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -34,6 +35,17 @@ public class NookDbContext : DbContext
             entity.Property(x => x.AssignedTo).HasMaxLength(80);
             entity.Property(x => x.Recurrence).HasMaxLength(20).IsRequired();
             entity.HasIndex(x => new { x.IsCompleted, x.DueDate });
+        });
+
+        modelBuilder.Entity<PantryItem>(entity =>
+        {
+            entity.ToTable("PantryItem");
+            entity.HasKey(x => x.PantryItemId);
+            entity.Property(x => x.Name).HasMaxLength(150).IsRequired();
+            entity.Property(x => x.Quantity).HasPrecision(10, 2);
+            entity.Property(x => x.Unit).HasMaxLength(50);
+            entity.Property(x => x.Location).HasMaxLength(30).IsRequired();
+            entity.HasIndex(x => new { x.Location, x.ExpiryDate });
         });
 
         modelBuilder.Entity<Recipe>(entity =>

@@ -107,6 +107,48 @@ namespace Nook.Api.Data.Migrations
                     b.ToTable("MealPlanEntry", (string)null);
                 });
 
+            modelBuilder.Entity("Nook.Api.Models.PantryItem", b =>
+                {
+                    b.Property<int>("PantryItemId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("PantryItemId"));
+
+                    b.Property<DateTime>("AddedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateOnly?>("ExpiryDate")
+                        .HasColumnType("date");
+
+                    b.Property<string>("Location")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<decimal>("Quantity")
+                        .HasPrecision(10, 2)
+                        .HasColumnType("decimal(10,2)");
+
+                    b.Property<string>("Unit")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<DateTime>("UpdatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("PantryItemId");
+
+                    b.HasIndex("Location", "ExpiryDate");
+
+                    b.ToTable("PantryItem", (string)null);
+                });
+
             modelBuilder.Entity("Nook.Api.Models.Recipe", b =>
                 {
                     b.Property<int>("RecipeId")
