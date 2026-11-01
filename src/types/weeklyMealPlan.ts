@@ -1,4 +1,4 @@
-import type { PlannedMeal } from "@/types/mealPlan";
+import type { PlannedMeal } from "@/types/mealPlan";\nimport type { CalendarEvent } from "@/types/calendar";
 
 export interface WeeklyMealPlanProps {
   startDate: Date;
