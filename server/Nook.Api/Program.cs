@@ -19,6 +19,8 @@ builder.Services.AddDbContext<NookDbContext>(options =>
 
 builder.Services.AddScoped<ShoppingService>();
 builder.Services.AddScoped<CalendarService>();
+builder.Services.AddScoped<PantryService>();
+builder.Services.AddScoped<ReceiptScannerService>();
 
 builder.Services.AddSingleton<FatSecretTokenService>();
 
@@ -97,6 +99,7 @@ app.MapShoppingEndpoints();
 app.MapMealPlanEndpoints();
 app.MapDiscoverEndpoints();
 app.MapChoreEndpoints();
+app.MapPantryEndpoints();
 
 app.MapGet("/health", async (NookDbContext db) =>
 {
