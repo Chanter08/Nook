@@ -50,9 +50,6 @@ public partial class AddCookedRecipeInventory : Migration
                 table.ForeignKey("FK_CookedIngredientUsage_CookedRecipe_CookedRecipeId",
                     x => x.CookedRecipeId, "CookedRecipe", "CookedRecipeId",
                     onDelete: ReferentialAction.Cascade);
-                table.ForeignKey("FK_CookedIngredientUsage_PantryItem_PantryItemId",
-                    x => x.PantryItemId, "PantryItem", "PantryItemId",
-                    onDelete: ReferentialAction.NoAction);
             });
 
         migrationBuilder.CreateIndex("IX_CookedRecipe_RecipeId", "CookedRecipe", "RecipeId");
