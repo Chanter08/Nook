@@ -79,7 +79,7 @@ function CookRecipeModal({ recipeId, mealPlanEntryId = null, onClose, onCooked }
     const totals = new Map<number, number>();
     for (const selection of selections) {
       if (!Number.isFinite(selection.quantity) || selection.quantity < 0 ||
-        Math.round(selection.quantity * 100) !== selection.quantity * 100) {
+        Math.abs(Math.round(selection.quantity * 100) - selection.quantity * 100) > 0.000001) {
         return "Quantities must be positive numbers with at most two decimal places.";
       }
       if (selection.pantryItemId === null && selection.quantity !== 0) {
