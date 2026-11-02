@@ -24,6 +24,8 @@ public class NookDbContext : DbContext
     public DbSet<MealPlanEntry> MealPlanEntries => Set<MealPlanEntry>();
     public DbSet<Chore> Chores => Set<Chore>();
     public DbSet<PantryItem> PantryItems => Set<PantryItem>();
+    public DbSet<CookedRecipe> CookedRecipes => Set<CookedRecipe>();
+    public DbSet<CookedIngredientUsage> CookedIngredientUsages => Set<CookedIngredientUsage>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -255,6 +257,29 @@ public class NookDbContext : DbContext
                 .WithMany()
                 .HasForeignKey(x => x.ShoppingCatalogItemId)
                 .OnDelete(DeleteBehavior.NoAction);
+        });
+
+        modelBuilder.Entity<CookedRecipe>(entity =>
+        {
+            entity.ToTable("CookedRecipe");
+            entity.HasKey(x => x.CookedRecipeId);
+            entity.Property(x => x.Servings).HasPrecision(10, 2);
+            entity.HasIndex(x => x.MealPlanEntryId);
+            entity.HasOne(x => x.Recipe).WithMany()
+                .HasForeignKey(x => x.RecipeId).OnDelete(DeleteBehavior.NoAction);
+        });
+
+        modelBuilder.Entity<CookedIngredientUsage>(entity =>
+        {
+            entity.ToTable("CookedIngredientUsage");
+            entity.HasKey(x => x.CookedIngredientUsageId);
+            entity.Property(x => x.IngredientName).HasMaxLength(150).IsRequired();
+            entity.Property(x => x.Quantity).HasPrecision(10, 2);
+            entity.Property(x => x.Unit).HasMaxLength(50);
+            entity.HasOne(x => x.CookedRecipe).WithMany(x => x.Usages)
+                .HasForeignKey(x => x.CookedRecipeId).OnDelete(DeleteBehavior.Cascade);
+            entity.HasOne(x => x.PantryItem).WithMany()
+                .HasForeignKey(x => x.PantryItemId).OnDelete(DeleteBehavior.NoAction);
         });
 
         modelBuilder.Entity<MealPlanEntry>(entity =>
