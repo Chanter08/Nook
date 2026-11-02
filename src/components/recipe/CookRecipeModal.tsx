@@ -76,6 +76,9 @@ function CookRecipeModal({ recipeId, mealPlanEntryId = null, onClose, onCooked }
 
   const issue = useMemo(() => {
     if (!preview) return null;
+    if (Number(servings) !== preview.servings) {
+      return "Click Update amounts to apply the new serving count.";
+    }
     const totals = new Map<number, number>();
     for (const selection of selections) {
       if (!Number.isFinite(selection.quantity) || selection.quantity < 0 ||
@@ -98,7 +101,7 @@ function CookRecipeModal({ recipeId, mealPlanEntryId = null, onClose, onCooked }
       }
     }
     return null;
-  }, [preview, selections]);
+  }, [preview, selections, servings]);
 
   const deductedCount = selections.filter((item) => item.pantryItemId !== null).length;
 
@@ -230,7 +233,7 @@ function CookRecipeModal({ recipeId, mealPlanEntryId = null, onClose, onCooked }
             {submitting ? "Saving..." : `Confirm cooked · deduct ${deductedCount} ${deductedCount === 1 ? "ingredient" : "ingredients"}`}
           </button>
           <p className="mt-2 text-center text-xs text-stone-500">
-            Leftovers remain in stock. You can undo this cooking record from the recipe page.
+            Unused ingredients remain in stock. You can undo this cooking record from the recipe page.
           </p>
         </footer>
       </section>
