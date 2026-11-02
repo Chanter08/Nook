@@ -12,6 +12,8 @@ services:
       RecipeApi__ApiKey: "${RECIPE_API_KEY}"
       Spoonacular__RapidApiKey: "${SPOONACULAR_RAPID_API_KEY}"
       Spoonacular__RapidApiHost: "${SPOONACULAR_RAPID_API_HOST}"
+      OpenAI__ApiKey: "${OPENAI_API_KEY}"
+      OpenAI__ReceiptModel: "gpt-5.4-mini"
     depends_on:
       - nook-db
 
