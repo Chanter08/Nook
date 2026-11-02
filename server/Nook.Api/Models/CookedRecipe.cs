@@ -23,5 +23,4 @@ public class CookedIngredientUsage
     public decimal Quantity { get; set; }
     public string? Unit { get; set; }
     public CookedRecipe CookedRecipe { get; set; } = null!;
-    public PantryItem PantryItem { get; set; } = null!;
 }
