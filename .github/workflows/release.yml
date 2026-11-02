@@ -63,7 +63,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Synchronize Docker Compose
-        shell: pwsh
+        shell: powershell
         env:
           NOOK_DEPLOY_PATH: ${{ vars.NOOK_DEPLOY_PATH }}
         run: |
