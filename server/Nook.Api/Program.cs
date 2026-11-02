@@ -77,6 +77,23 @@ var app = builder.Build();
 
 app.UseCors("NookMobile");
 
+// Fail CI before deployment when the model and the last migration snapshot differ.
+// This checks metadata only; it does not connect to or change the database.
+if (args.Any(x => x.Equals("--verify-migrations", StringComparison.OrdinalIgnoreCase)))
+{
+    await using var scope = app.Services.CreateAsyncScope();
+    var db = scope.ServiceProvider.GetRequiredService<NookDbContext>();
+
+    if (db.Database.HasPendingModelChanges())
+    {
+        throw new InvalidOperationException(
+            "NookDbContext does not match the latest EF migration snapshot.");
+    }
+
+    Console.WriteLine("EF Core model matches the latest migration snapshot.");
+    return;
+}
+
 if (args.Any(x => x.Equals("--migrate", StringComparison.OrdinalIgnoreCase)))
 {
     await using var scope = app.Services.CreateAsyncScope();

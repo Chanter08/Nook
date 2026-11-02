@@ -276,6 +276,7 @@ public class NookDbContext : DbContext
             entity.Property(x => x.IngredientName).HasMaxLength(150).IsRequired();
             entity.Property(x => x.Quantity).HasPrecision(10, 2);
             entity.Property(x => x.Unit).HasMaxLength(50);
+            entity.HasIndex(x => x.PantryItemId);
             entity.HasOne(x => x.CookedRecipe).WithMany(x => x.Usages)
                 .HasForeignKey(x => x.CookedRecipeId).OnDelete(DeleteBehavior.Cascade);
         });
