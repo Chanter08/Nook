@@ -278,8 +278,6 @@ public class NookDbContext : DbContext
             entity.Property(x => x.Unit).HasMaxLength(50);
             entity.HasOne(x => x.CookedRecipe).WithMany(x => x.Usages)
                 .HasForeignKey(x => x.CookedRecipeId).OnDelete(DeleteBehavior.Cascade);
-            entity.HasOne(x => x.PantryItem).WithMany()
-                .HasForeignKey(x => x.PantryItemId).OnDelete(DeleteBehavior.NoAction);
         });
 
         modelBuilder.Entity<MealPlanEntry>(entity =>
