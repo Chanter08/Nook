@@ -1,8 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ArrowLeft, CalendarPlus } from "lucide-react";
+import { ArrowLeft, CalendarPlus, CookingPot, RotateCcw } from "lucide-react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { filterRecipes, getRecipeFilterQuery } from "@/lib/recipeFilters";
 import AddIngredientsModal from "@/components/recipe/AddIngredientsModal";
+import CookRecipeModal from "@/components/recipe/CookRecipeModal";
+import { getCookingHistory, undoCooking, type CookingRecord } from "@/api/cooking";
 import RecipeHero from "@/components/recipe/RecipeHero";
 import RecipeIngredients from "@/components/recipe/RecipeIngredients";
 import RecipeMethod from "@/components/recipe/RecipeMethod";
@@ -41,6 +43,16 @@ function RecipePage() {
   const searchTerm = searchParams.get("q") ?? "";
   const selectedMealType = searchParams.get("mealType") ?? "All";
   const selectedCuisine = searchParams.get("cuisine") ?? "All";
+
+  const [cookModalOpen, setCookModalOpen] = useState(searchParams.get("cook") === "1");
+  const initialPlanEntry = Number(searchParams.get("mealPlanEntryId"));
+  const [cookPlanEntryId] = useState<number | null>(
+    Number.isInteger(initialPlanEntry) && initialPlanEntry > 0 ? initialPlanEntry : null,
+  );
+  const [cookingHistory, setCookingHistory] = useState<CookingRecord[]>([]);
+  const [cookingError, setCookingError] = useState<string | null>(null);
+  const [undoingId, setUndoingId] = useState<number | null>(null);
+  const [cookedSuccessfully, setCookedSuccessfully] = useState(false);
 
   const [planModalOpen, setPlanModalOpen] = useState(false);
   const [plannedSuccessfully, setPlannedSuccessfully] = useState(false);
@@ -105,13 +117,48 @@ function RecipePage() {
     void loadRecipe();
   }, [id]);
 
+  useEffect(() => {
+    if (!id) return;
+    let active = true;
+    getCookingHistory(Number(id))
+      .then((history) => { if (active) setCookingHistory(history); })
+      .catch((cause: unknown) => {
+        if (active) setCookingError(cause instanceof Error ? cause.message : "Could not load cooking history.");
+      });
+    return () => { active = false; };
+  }, [id]);
+
+  async function refreshCookingHistory() {
+    if (!recipe) return;
+    try {
+      setCookingHistory(await getCookingHistory(recipe.id));
+      setCookingError(null);
+    } catch (cause) {
+      setCookingError(cause instanceof Error ? cause.message : "Could not load cooking history.");
+    }
+  }
+
+  async function undoRecord(recordId: number) {
+    if (!window.confirm("Undo this cooking record and return its ingredients to pantry stock?")) return;
+    try {
+      setUndoingId(recordId);
+      setCookingError(null);
+      await undoCooking(recordId);
+      await refreshCookingHistory();
+    } catch (cause) {
+      setCookingError(cause instanceof Error ? cause.message : "Could not undo this cooking record.");
+    } finally {
+      setUndoingId(null);
+    }
+  }
+
   function navigateToRecipe(target: RecipeSummary) {
     navigate(`/meals/${target.id}${recipeQuery}`);
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
   function handleTouchStart(event: React.TouchEvent) {
-    if (shoppingPickerOpen) return;
+    if (shoppingPickerOpen || cookModalOpen) return;
 
     const target = event.target as HTMLElement;
 
@@ -134,7 +181,7 @@ function RecipePage() {
   }
 
   function handleTouchEnd(event: React.TouchEvent) {
-    if (!swipeStart.current || shoppingPickerOpen) return;
+    if (!swipeStart.current || shoppingPickerOpen || cookModalOpen) return;
 
     const touch = event.changedTouches[0];
     const deltaX = touch.clientX - swipeStart.current.x;
@@ -290,6 +337,11 @@ function RecipePage() {
             <CalendarPlus size={17} />
             {plannedSuccessfully ? "Planned ✓" : "Plan meal"}
           </button>
+          <button type="button" onClick={() => setCookModalOpen(true)}
+            className="flex items-center gap-2 rounded-full bg-stone-100 px-4 py-2.5 text-sm font-medium text-stone-800 hover:bg-stone-200 dark:bg-white/10 dark:text-stone-100 dark:hover:bg-white/15">
+            <CookingPot size={17} />
+            {cookedSuccessfully ? "Cooked ✓" : "Mark as cooked"}
+          </button>
         </div>
         <RecipeStats recipe={recipe} />
         <RecipeNutrition recipe={recipe} />
@@ -303,6 +355,43 @@ function RecipePage() {
 
         <RecipeMethod steps={recipe.steps} />
 
+        <section className="mt-8 rounded-3xl border border-stone-200 p-5 dark:border-white/10">
+          <h2 className="text-lg font-semibold">Cooking history</h2>
+          <p className="mt-1 text-sm text-stone-500 dark:text-stone-400">
+            Only confirmed cooking deducts stock. Undo returns the recorded amounts.
+          </p>
+          {cookingError && <p role="alert" className="mt-3 text-sm text-red-600">{cookingError}</p>}
+          {cookingHistory.length === 0 ? (
+            <p className="mt-3 text-sm text-stone-500">No cooking records yet.</p>
+          ) : (
+            <div className="mt-4 space-y-3">
+              {cookingHistory.map((record) => (
+                <div key={record.id} className="flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-stone-50 p-3 dark:bg-white/5">
+                  <div>
+                    <p className="text-sm font-medium">
+                      {new Date(record.cookedAtUtc).toLocaleString()} · {record.servings} servings
+                    </p>
+                    <p className="text-xs text-stone-500">
+                      {record.undoneAtUtc ? "Undone" :
+                        record.items.length
+                          ? record.items.map((item) => `${item.quantity} ${item.unit ?? ""} ${item.ingredientName}`).join(" · ")
+                          : "No pantry stock deducted"}
+                    </p>
+                  </div>
+                  {!record.undoneAtUtc && (
+                    <button type="button" disabled={undoingId !== null}
+                      onClick={() => void undoRecord(record.id)}
+                      className="flex items-center gap-1 rounded-full bg-white px-3 py-2 text-xs font-medium text-stone-800 shadow-sm disabled:opacity-40 dark:bg-white/10 dark:text-stone-100">
+                      <RotateCcw size={13} />
+                      {undoingId === record.id ? "Undoing..." : "Undo"}
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
+
         <RecipeNavigation
           previousRecipe={previousRecipe}
           nextRecipe={nextRecipe}
@@ -310,6 +399,16 @@ function RecipePage() {
           onNavigate={navigateToRecipe}
         />
       </div>
+
+      {cookModalOpen && (
+        <CookRecipeModal recipeId={recipe.id}
+          mealPlanEntryId={cookPlanEntryId}
+          onClose={() => setCookModalOpen(false)}
+          onCooked={() => {
+            setCookedSuccessfully(true);
+            void refreshCookingHistory();
+          }} />
+      )}
 
       {planModalOpen && (
         <PlanRecipeModal

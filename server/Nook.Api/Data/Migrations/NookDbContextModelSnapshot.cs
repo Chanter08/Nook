@@ -85,6 +85,37 @@ namespace Nook.Api.Data.Migrations
                     b.Navigation("ShoppingCatalogItem");
                 });
 
+            modelBuilder.Entity("Nook.Api.Models.CookedRecipe", b =>
+                {
+                    b.Property<int>("CookedRecipeId").ValueGeneratedOnAdd().HasColumnType("int");
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("CookedRecipeId"));
+                    b.Property<DateTime>("CookedAtUtc").HasColumnType("datetime2");
+                    b.Property<int?>("MealPlanEntryId").HasColumnType("int");
+                    b.Property<int>("RecipeId").HasColumnType("int");
+                    b.Property<decimal>("Servings").HasPrecision(10, 2).HasColumnType("decimal(10,2)");
+                    b.Property<DateTime?>("UndoneAtUtc").HasColumnType("datetime2");
+                    b.HasKey("CookedRecipeId");
+                    b.HasIndex("MealPlanEntryId");
+                    b.HasIndex("RecipeId");
+                    b.ToTable("CookedRecipe", (string)null);
+                });
+
+            modelBuilder.Entity("Nook.Api.Models.CookedIngredientUsage", b =>
+                {
+                    b.Property<int>("CookedIngredientUsageId").ValueGeneratedOnAdd().HasColumnType("int");
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("CookedIngredientUsageId"));
+                    b.Property<int>("CookedRecipeId").HasColumnType("int");
+                    b.Property<string>("IngredientName").IsRequired().HasMaxLength(150).HasColumnType("nvarchar(150)");
+                    b.Property<int>("PantryItemId").HasColumnType("int");
+                    b.Property<decimal>("Quantity").HasPrecision(10, 2).HasColumnType("decimal(10,2)");
+                    b.Property<int>("RecipeIngredientId").HasColumnType("int");
+                    b.Property<string>("Unit").HasMaxLength(50).HasColumnType("nvarchar(50)");
+                    b.HasKey("CookedIngredientUsageId");
+                    b.HasIndex("CookedRecipeId");
+                    b.HasIndex("PantryItemId");
+                    b.ToTable("CookedIngredientUsage", (string)null);
+                });
+
             modelBuilder.Entity("Nook.Api.Models.MealPlanEntry", b =>
                 {
                     b.Property<int>("MealPlanEntryId")
@@ -481,6 +512,26 @@ namespace Nook.Api.Data.Migrations
                     b.ToTable("ShoppingListItem", (string)null);
                 });
 
+            modelBuilder.Entity("Nook.Api.Models.CookedRecipe", b =>
+                {
+                    b.HasOne("Nook.Api.Models.Recipe", "Recipe")
+                        .WithMany()
+                        .HasForeignKey("RecipeId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+                    b.Navigation("Recipe");
+                });
+
+            modelBuilder.Entity("Nook.Api.Models.CookedIngredientUsage", b =>
+                {
+                    b.HasOne("Nook.Api.Models.CookedRecipe", "CookedRecipe")
+                        .WithMany("Usages")
+                        .HasForeignKey("CookedRecipeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                    b.Navigation("CookedRecipe");
+                });
+
             modelBuilder.Entity("Nook.Api.Models.MealPlanEntry", b =>
                 {
                     b.HasOne("Nook.Api.Models.Recipe", "Recipe")
@@ -583,6 +634,11 @@ namespace Nook.Api.Data.Migrations
                     b.Navigation("ShoppingCatalogItem");
 
                     b.Navigation("ShoppingList");
+                });
+
+            modelBuilder.Entity("Nook.Api.Models.CookedRecipe", b =>
+                {
+                    b.Navigation("Usages");
                 });
 
             modelBuilder.Entity("Nook.Api.Models.Cuisine", b =>
