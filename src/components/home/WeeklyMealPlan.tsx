@@ -219,6 +219,12 @@ function WeeklyMealPlan({
                             </div>
                           </Link>
 
+                          <Link
+                            to={`/meals/${meal.recipe.id}?cook=1&mealPlanEntryId=${meal.id}`}
+                            className="mx-3 mb-3 inline-flex items-center rounded-full bg-emerald-100 px-3 py-1.5 text-xs font-semibold text-emerald-800 hover:bg-emerald-200 dark:bg-emerald-400/10 dark:text-emerald-300">
+                            Mark cooked
+                          </Link>
+
                           <button
                             type="button"
                             aria-label={`Remove ${meal.recipe.name} from plan`}
