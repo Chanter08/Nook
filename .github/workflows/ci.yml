@@ -38,3 +38,7 @@ jobs:
 
       - name: Build backend
         run: dotnet build ./server/Nook.Api/Nook.Api.csproj --configuration Release --no-restore
+      - name: Verify EF Core migration snapshot
+        run: dotnet run --project ./server/Nook.Api/Nook.Api.csproj -c Release --no-build -- --verify-migrations
+        env:
+          ConnectionStrings__NookDb: "Server=localhost;Database=NookMigrationValidation;User Id=sa;Password=NotARealPassword123!;Encrypt=False"
