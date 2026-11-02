@@ -79,7 +79,6 @@ jobs:
           Copy-Item $target "$target.bak" -Force
           Copy-Item (Join-Path $env:GITHUB_WORKSPACE "docker-compose.yml") $target -Force
 
-    steps:
       - name: Check home server Docker
         shell: cmd
         env:
