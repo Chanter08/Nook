@@ -529,13 +529,7 @@ namespace Nook.Api.Data.Migrations
                         .HasForeignKey("CookedRecipeId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-                    b.HasOne("Nook.Api.Models.PantryItem", "PantryItem")
-                        .WithMany()
-                        .HasForeignKey("PantryItemId")
-                        .OnDelete(DeleteBehavior.NoAction)
-                        .IsRequired();
                     b.Navigation("CookedRecipe");
-                    b.Navigation("PantryItem");
                 });
 
             modelBuilder.Entity("Nook.Api.Models.MealPlanEntry", b =>
