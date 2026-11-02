@@ -63,7 +63,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Synchronize Docker Compose
-        shell: powershell
+        shell: powershell -NoProfile -NonInteractive -ExecutionPolicy Bypass -Command "& '{0}'"
         env:
           NOOK_DEPLOY_PATH: ${{ vars.NOOK_DEPLOY_PATH }}
         run: |
