@@ -1,6 +1,6 @@
 {
   "name": "Tiramisu Overnight Oats",
-  "description": "Creamy chocolate-espresso overnight oats topped with a vanilla protein yoghurt layer and a dusting of cacao. Make ahead and refrigerate overnight. Nutrition figures are supplied estimates per serving.",
+  "description": "Creamy chocolate-espresso overnight oats with a vanilla protein yoghurt topping. Make ahead and chill overnight. Ingredient weights are approximate metric conversions; nutrition figures are supplied estimates per serving and have not been recalculated.",
   "prepTimeMinutes": 10,
   "cookTimeMinutes": 0,
   "servings": 2,
@@ -16,59 +16,59 @@
   "ingredients": [
     {
       "name": "Rolled oats",
-      "quantity": 1,
-      "unit": "cup"
+      "quantity": 80,
+      "unit": "g"
     },
     {
       "name": "Raw cacao powder",
-      "quantity": 3,
-      "unit": "tbsp",
-      "notes": "Plus extra for dusting"
+      "quantity": 15,
+      "unit": "g",
+      "notes": "Plus a little extra for dusting"
     },
     {
       "name": "Chia seeds",
-      "quantity": 1.5,
-      "unit": "tbsp"
+      "quantity": 18,
+      "unit": "g"
     },
     {
       "name": "Pure vanilla extract",
-      "quantity": 1,
-      "unit": "tsp",
+      "quantity": 5,
+      "unit": "ml",
       "notes": "For oat base"
     },
     {
       "name": "Pink Himalayan salt",
       "quantity": null,
       "unit": null,
-      "notes": "Pinch"
+      "notes": "Small pinch"
     },
     {
       "name": "Espresso",
-      "quantity": 3,
-      "unit": "tbsp",
+      "quantity": 45,
+      "unit": "ml",
       "notes": "Brewed and cooled"
     },
     {
       "name": "Full-fat almond milk",
-      "quantity": 1.25,
-      "unit": "cups"
+      "quantity": 300,
+      "unit": "ml"
     },
     {
       "name": "Raw honey",
-      "quantity": 2,
-      "unit": "tbsp",
+      "quantity": 42,
+      "unit": "g",
       "notes": "For oat base"
     },
     {
       "name": "Raw honey",
-      "quantity": 0.5,
-      "unit": "tbsp",
+      "quantity": 10,
+      "unit": "g",
       "notes": "For yoghurt topping"
     },
     {
       "name": "Pure vanilla extract",
-      "quantity": 0.25,
-      "unit": "tsp",
+      "quantity": 1,
+      "unit": "ml",
       "notes": "For yoghurt topping"
     },
     {
@@ -78,25 +78,25 @@
     },
     {
       "name": "Oikos Triple Zero vanilla yoghurt",
-      "quantity": 1.5,
-      "unit": "cups"
+      "quantity": 360,
+      "unit": "g"
     }
   ],
   "steps": [
     {
-      "instruction": "In a mixing bowl, combine the rolled oats, cacao powder, chia seeds and a pinch of salt."
+      "instruction": "Combine 80 g rolled oats, 15 g cacao powder, 18 g chia seeds and a pinch of salt in a bowl."
     },
     {
-      "instruction": "Pour in the cooled espresso, almond milk, 2 tbsp honey and 1 tsp vanilla extract. Stir until evenly mixed, then divide between two sealable jars or transfer to one larger airtight container."
+      "instruction": "Add 45 ml cooled espresso, 300 ml almond milk, 42 g honey and 5 ml vanilla extract. Stir thoroughly and transfer to two sealable jars or one large airtight container."
     },
     {
-      "instruction": "In a separate bowl, whisk the vanilla yoghurt with 1/2 tbsp honey, 1/4 tsp vanilla extract and vanilla protein powder until smooth and creamy."
+      "instruction": "Whisk 360 g vanilla yoghurt, 10 g honey, 1 ml vanilla extract and 30 g vanilla protein powder until smooth."
     },
     {
-      "instruction": "Spoon the protein yoghurt topping evenly over the oat mixture and smooth the surface. Lightly dust with additional cacao powder."
+      "instruction": "Spread the yoghurt topping evenly over the oats and dust lightly with extra cacao powder."
     },
     {
-      "instruction": "Cover and refrigerate for at least 8 hours or overnight. Serve chilled; if stored together in one container, divide into two portions before eating."
+      "instruction": "Cover and refrigerate for at least 8 hours or overnight. Serve chilled, divided into two portions."
     }
   ]
 }
