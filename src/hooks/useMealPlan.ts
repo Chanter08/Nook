@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { deleteMealPlanEntry, getMealPlan } from "@/api/mealPlan";
+import { deleteMealPlanEntry, getMealPlan, moveMealPlanEntry } from "@/api/mealPlan";
 import type { PlannedMeal } from "@/types/mealPlan";
 
 function getDateKey(date: Date) {
@@ -16,6 +16,8 @@ export function useMealPlan(startDate: Date) {
   const [error, setError] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
   const [removingIds, setRemovingIds] = useState<number[]>([]);
+  const [movingIds, setMovingIds] = useState<number[]>([]);
+  const [moveError, setMoveError] = useState<string | null>(null);
   const startKey = getDateKey(startDate);
 
   const refresh = useCallback(async () => {
@@ -52,12 +54,37 @@ export function useMealPlan(startDate: Date) {
     }
   }
 
+  async function moveMeal(id: number, date: string): Promise<boolean> {
+    const meal = meals.find((entry) => entry.id === id);
+    if (!meal || meal.date === date || movingIds.includes(id)) return false;
+
+    setMoveError(null);
+    setMovingIds((current) => [...current, id]);
+    try {
+      await moveMealPlanEntry(id, date);
+      setMeals((current) => current.map((entry) =>
+        entry.id === id ? { ...entry, date } : entry,
+      ));
+      return true;
+    } catch (error) {
+      console.error("Move meal error:", error);
+      setMoveError(error instanceof Error ? error.message : "Couldn't move that meal.");
+      await refresh();
+      return false;
+    } finally {
+      setMovingIds((current) => current.filter((mealId) => mealId !== id));
+    }
+  }
+
   return {
     meals,
     loading,
     error,
     actionError,
     removingIds,
+    movingIds,
+    moveError,
+    moveMeal,
     refresh,
     removeMeal
   };
