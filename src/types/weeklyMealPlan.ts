@@ -9,4 +9,7 @@ export interface WeeklyMealPlanProps {
   onRefresh: () => Promise<void>;
   onRemove: (id: number) => Promise<void>;
   removingIds: number[];
+  movingIds: number[];
+  onMove: (id: number, date: string) => Promise<boolean>;
+  moveError: string | null;
 }
