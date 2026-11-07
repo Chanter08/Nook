@@ -26,6 +26,9 @@ function HomePage() {
     meals,
     loading: mealPlanLoading,
     removingIds,
+    movingIds,
+    moveError,
+    moveMeal,
     refresh: refreshMealPlan,
     removeMeal,
   } = useMealPlan(planStart);
@@ -95,6 +98,9 @@ function HomePage() {
         onRefresh={refreshMealPlan}
         onRemove={removeMeal}
         removingIds={removingIds}
+        movingIds={movingIds}
+        moveError={moveError}
+        onMove={moveMeal}
       />
 
       <UpcomingEvents
