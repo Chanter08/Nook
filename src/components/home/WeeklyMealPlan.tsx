@@ -5,6 +5,7 @@ import {
   CalendarDays,
   Plus,
   Trash2,
+  GripVertical,
   UtensilsCrossed,
 } from "lucide-react";
 import { useState } from "react";
@@ -45,8 +46,13 @@ function WeeklyMealPlan({
   onRefresh,
   onRemove,
   removingIds,
+  movingIds,
+  onMove,
+  moveError,
 }: WeeklyMealPlanProps) {
   const [addingDate, setAddingDate] = useState<Date | null>(null);
+  const [draggedMealId, setDraggedMealId] = useState<number | null>(null);
+  const [dropDate, setDropDate] = useState<string | null>(null);
   const todayKey = getDateKey(new Date());
 
   const days = Array.from({ length: 7 }, (_, index) => {
@@ -69,6 +75,9 @@ function WeeklyMealPlan({
         </p>
       </div>
 
+      {moveError && (
+        <p role="alert" className="mb-3 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700 dark:bg-red-400/10 dark:text-red-300">{moveError}</p>
+      )}
       {loading ? (
         <div className="rounded-3xl bg-stone-100 p-6 text-sm text-stone-500 dark:bg-white/[0.045] dark:text-stone-400 dark:ring-1 dark:ring-white/[0.06]">
           Loading meal plan...
@@ -100,7 +109,25 @@ function WeeklyMealPlan({
               return (
                 <article
                   key={dateKey}
+                  onDragOver={(event) => {
+                    if (draggedMealId === null) return;
+                    event.preventDefault();
+                    event.dataTransfer.dropEffect = "move";
+                    setDropDate(dateKey);
+                  }}
+                  onDragLeave={(event) => {
+                    if (!event.currentTarget.contains(event.relatedTarget as Node)) setDropDate(null);
+                  }}
+                  onDrop={(event) => {
+                    event.preventDefault();
+                    const rawId = event.dataTransfer.getData("text/plain");
+                    const id = Number(rawId) || draggedMealId;
+                    setDropDate(null);
+                    setDraggedMealId(null);
+                    if (id !== null && Number.isInteger(id)) void onMove(id, dateKey);
+                  }}
                   className={`flex h-[560px] w-[78vw] max-w-[300px] shrink-0 snap-start flex-col overflow-hidden rounded-3xl border transition-all sm:w-[240px] sm:max-w-none lg:w-[260px]
+                    ${dropDate === dateKey && draggedMealId !== null ? "ring-2 ring-emerald-500 ring-offset-2 dark:ring-offset-stone-950" : ""}
                     ${
                       isToday
                         ? "relative z-10 border-emerald-400 bg-white shadow-lg shadow-black/10 sm:-translate-y-1 dark:border-emerald-500/40 dark:bg-white/[0.035] dark:shadow-black/30"
@@ -190,13 +217,21 @@ function WeeklyMealPlan({
                       dayMeals.map((meal) => (
                         <div
                           key={meal.id}
-                          className="group relative rounded-2xl bg-stone-50 transition hover:bg-stone-100 dark:bg-white/[0.04] dark:hover:bg-white/[0.07]"
+                          draggable={!movingIds.includes(meal.id)}
+                          onDragStart={(event) => {
+                            event.dataTransfer.setData("text/plain", String(meal.id));
+                            event.dataTransfer.effectAllowed = "move";
+                            setDraggedMealId(meal.id);
+                          }}
+                          onDragEnd={() => { setDraggedMealId(null); setDropDate(null); }}
+                          className={`group relative rounded-2xl cursor-grab active:cursor-grabbing ${movingIds.includes(meal.id) ? "opacity-50" : ""} bg-stone-50 transition hover:bg-stone-100 dark:bg-white/[0.04] dark:hover:bg-white/[0.07]`}
                         >
                           <Link
                             to={`/meals/${meal.recipe.id}`}
                             className="block p-3 pr-10"
                           >
-                            <p className="mb-2 text-xs font-medium text-stone-500 dark:text-stone-400">
+                            <p className="mb-2 flex items-center gap-1 text-xs font-medium text-stone-500 dark:text-stone-400">
+                              <GripVertical size={13} aria-hidden="true" />
                               {meal.mealType}
                             </p>
 
@@ -219,6 +254,27 @@ function WeeklyMealPlan({
                             </div>
                           </Link>
 
+                          <div className="mx-3 mb-2 flex items-center gap-2">
+                            <label className="text-xs text-stone-500 dark:text-stone-400">
+                              <span className="sr-only">Move {meal.recipe.name} to another day</span>
+                              <select
+                                aria-label={`Move ${meal.recipe.name} to another day`}
+                                value=""
+                                disabled={movingIds.includes(meal.id)}
+                                onChange={(event) => {
+                                  if (event.target.value) void onMove(meal.id, event.target.value);
+                                }}
+                                className="max-w-[125px] rounded-full border border-stone-200 bg-white px-2 py-1.5 text-xs text-stone-600 dark:border-white/10 dark:bg-stone-800 dark:text-stone-200"
+                              >
+                                <option value="">Move to…</option>
+                                {days.filter((day) => getDateKey(day) !== meal.date).map((day) => (
+                                  <option key={getDateKey(day)} value={getDateKey(day)}>
+                                    {day.toLocaleDateString(undefined, { weekday: "short", day: "numeric", month: "short" })}
+                                  </option>
+                                ))}
+                              </select>
+                            </label>
+                          </div>
                           <Link
                             to={`/meals/${meal.recipe.id}?cook=1&mealPlanEntryId=${meal.id}`}
                             className="mx-3 mb-3 inline-flex items-center rounded-full bg-emerald-100 px-3 py-1.5 text-xs font-semibold text-emerald-800 hover:bg-emerald-200 dark:bg-emerald-400/10 dark:text-emerald-300">

@@ -23,6 +23,7 @@ public static class MealPlanEndpoints
         group.MapGet("/week", GetWeek);
         group.MapPost("", AddEntry);
         group.MapDelete("/{id:int}", DeleteEntry);
+        group.MapPatch("/{id:int}/move", MoveEntry);
 
         return app;
     }
@@ -100,6 +101,48 @@ public static class MealPlanEndpoints
             {
                 Id = entry.MealPlanEntryId
             });
+    }
+
+    private sealed record MoveMealPlanEntryRequest(DateOnly Date);
+
+    private static async Task<IResult> MoveEntry(
+        int id, MoveMealPlanEntryRequest request, NookDbContext db)
+    {
+        var entry = await db.MealPlanEntries.FindAsync(id);
+        if (entry is null)
+            return Results.NotFound(new { message = "Meal plan entry not found." });
+
+        if (request.Date == default)
+            return Results.BadRequest(new { message = "A valid destination date is required." });
+
+        if (entry.PlanDate == request.Date)
+            return Results.NoContent();
+
+        // Preserve meal type and never overwrite an occupied slot.
+        var occupied = await db.MealPlanEntries.AnyAsync(x =>
+            x.MealPlanEntryId != id &&
+            x.PlanDate == request.Date &&
+            x.MealType == entry.MealType);
+
+        if (occupied)
+            return Results.Conflict(new {
+                message = $"{entry.MealType} is already planned for that day. Move it first."
+            });
+
+        entry.PlanDate = request.Date;
+        try
+        {
+            await db.SaveChangesAsync();
+        }
+        catch (DbUpdateException)
+        {
+            // The unique (PlanDate, MealType) index guards concurrent moves.
+            return Results.Conflict(new {
+                message = "That meal slot is no longer available. Refresh and try again."
+            });
+        }
+
+        return Results.NoContent();
     }
 
     private static async Task<IResult> DeleteEntry(int id, NookDbContext db)

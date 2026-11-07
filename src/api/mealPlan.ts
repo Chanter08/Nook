@@ -25,3 +25,9 @@ export function deleteMealPlanEntry(id: number) {
     method: "DELETE",
   });
 }
+export function moveMealPlanEntry(id: number, date: string) {
+  return apiRequest<void>(`/api/meal-plan/${id}/move`, {
+    method: "PATCH",
+    body: JSON.stringify({ date }),
+  });
+}
