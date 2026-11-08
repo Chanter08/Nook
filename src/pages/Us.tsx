@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { CheckCircle2, Plus, Sparkles } from "lucide-react";
 import ThemeToggle from "@/components/ThemeToggle";
+import NotificationSettings from "@/components/NotificationSettings";
 import AddChoreForm from "@/components/chores/AddChoreForm";
 import ChoreRow from "@/components/chores/ChoreRow";
 import { useChores } from "@/hooks/useChores";
@@ -73,6 +74,7 @@ function UsPage() {
           </section>
         )}
       </section>
+      <NotificationSettings />
     </main>
   );
 }
