@@ -17,6 +17,8 @@ builder.Services.AddDbContext<NookDbContext>(options =>
     )
 );
 
+builder.Services.AddScoped<WebPushSender>();
+builder.Services.AddHostedService<PushReminderWorker>();
 builder.Services.AddScoped<ShoppingService>();
 builder.Services.AddScoped<CalendarService>();
 builder.Services.AddScoped<PantryService>();
@@ -111,6 +113,7 @@ if (args.Any(x => x.Equals("--migrate", StringComparison.OrdinalIgnoreCase)))
 
 app.UseStaticFiles();
 
+app.MapPushEndpoints();
 app.MapCalendarEndpoints();
 app.MapRecipeEndpoints();
 app.MapShoppingEndpoints();
