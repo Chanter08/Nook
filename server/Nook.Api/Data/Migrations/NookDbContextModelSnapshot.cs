@@ -22,6 +22,36 @@ namespace Nook.Api.Data.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
+            modelBuilder.Entity("Nook.Api.Models.PushSubscription", b =>
+                {
+                    b.Property<Guid>("Id").HasColumnType("uniqueidentifier");
+                    b.Property<string>("AccessToken").IsRequired().HasMaxLength(64).HasColumnType("nvarchar(64)");
+                    b.Property<string>("Endpoint").IsRequired().HasMaxLength(2000).HasColumnType("nvarchar(2000)");
+                    b.Property<string>("P256dh").IsRequired().HasMaxLength(512).HasColumnType("nvarchar(512)");
+                    b.Property<string>("Auth").IsRequired().HasMaxLength(256).HasColumnType("nvarchar(256)");
+                    b.Property<bool>("MealsEnabled").HasColumnType("bit");
+                    b.Property<bool>("ChoresEnabled").HasColumnType("bit");
+                    b.Property<bool>("EventsEnabled").HasColumnType("bit");
+                    b.Property<bool>("PantryEnabled").HasColumnType("bit");
+                    b.Property<int>("ReminderHour").HasColumnType("int");
+                    b.Property<DateTime>("CreatedAtUtc").HasColumnType("datetime2");
+                    b.HasKey("Id");
+                    b.HasIndex("Endpoint").IsUnique();
+                    b.ToTable("PushSubscription", (string)null);
+                });
+
+            modelBuilder.Entity("Nook.Api.Models.PushDelivery", b =>
+                {
+                    b.Property<long>("Id").ValueGeneratedOnAdd().HasColumnType("bigint");
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
+                    b.Property<Guid>("SubscriptionId").HasColumnType("uniqueidentifier");
+                    b.Property<string>("EventKey").IsRequired().HasMaxLength(300).HasColumnType("nvarchar(300)");
+                    b.Property<DateTime>("SentAtUtc").HasColumnType("datetime2");
+                    b.HasKey("Id");
+                    b.HasIndex("SubscriptionId", "EventKey").IsUnique();
+                    b.ToTable("PushDelivery", (string)null);
+                });
+
             modelBuilder.Entity("Nook.Api.Models.Chore", b =>
                 {
                     b.Property<int>("ChoreId").ValueGeneratedOnAdd().HasColumnType("int");
@@ -560,6 +590,16 @@ namespace Nook.Api.Data.Migrations
                     b.Navigation("Cuisine");
 
                     b.Navigation("Recipe");
+                });
+
+            modelBuilder.Entity("Nook.Api.Models.PushDelivery", b =>
+                {
+                    b.HasOne("Nook.Api.Models.PushSubscription", "Subscription")
+                        .WithMany()
+                        .HasForeignKey("SubscriptionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                    b.Navigation("Subscription");
                 });
 
             modelBuilder.Entity("Nook.Api.Models.RecipeIngredient", b =>
