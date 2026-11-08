@@ -8,6 +8,9 @@ services:
     environment:
       ASPNETCORE_ENVIRONMENT: Production
       ConnectionStrings__NookDb: "Server=nook-db,1433;Database=Nook;User Id=sa;Password=${SQL_SA_PASSWORD};Encrypt=False;TrustServerCertificate=True"
+      WebPush__PublicKey: "${WEB_PUSH_PUBLIC_KEY:-}"
+      WebPush__PrivateKey: "${WEB_PUSH_PRIVATE_KEY:-}"
+      WebPush__Subject: "${WEB_PUSH_SUBJECT:-}"
       GoogleCalendar__IcalUrl: "${GOOGLE_CALENDAR_ICAL_URL}"
       RecipeApi__ApiKey: "${RECIPE_API_KEY}"
       Spoonacular__RapidApiKey: "${SPOONACULAR_RAPID_API_KEY}"

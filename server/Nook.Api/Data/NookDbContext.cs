@@ -10,6 +10,8 @@ public class NookDbContext : DbContext
     {
     }
 
+    public DbSet<PushSubscription> PushSubscriptions => Set<PushSubscription>();
+    public DbSet<PushDelivery> PushDeliveries => Set<PushDelivery>();
     public DbSet<Recipe> Recipes => Set<Recipe>();
     public DbSet<RecipeType> RecipeTypes => Set<RecipeType>();
     public DbSet<RecipeRecipeType> RecipeRecipeTypes => Set<RecipeRecipeType>();
@@ -29,6 +31,22 @@ public class NookDbContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        modelBuilder.Entity<PushSubscription>(entity => {
+            entity.ToTable("PushSubscription");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.AccessToken).IsRequired().HasMaxLength(64);
+            entity.Property(x => x.Endpoint).IsRequired().HasMaxLength(2000);
+            entity.Property(x => x.P256dh).IsRequired().HasMaxLength(512);
+            entity.Property(x => x.Auth).IsRequired().HasMaxLength(256);
+            entity.HasIndex(x => x.Endpoint).IsUnique();
+        });
+        modelBuilder.Entity<PushDelivery>(entity => {
+            entity.ToTable("PushDelivery");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.EventKey).IsRequired().HasMaxLength(300);
+            entity.HasIndex(x => new { x.SubscriptionId, x.EventKey }).IsUnique();
+            entity.HasOne(x => x.Subscription).WithMany().HasForeignKey(x => x.SubscriptionId).OnDelete(DeleteBehavior.Cascade);
+        });
         modelBuilder.Entity<Chore>(entity =>
         {
             entity.ToTable("Chore");
