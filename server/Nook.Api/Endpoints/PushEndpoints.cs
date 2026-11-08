@@ -28,11 +28,20 @@ public static class PushEndpoints {
   return value.Length==s.AccessToken.Length &&
    CryptographicOperations.FixedTimeEquals(System.Text.Encoding.UTF8.GetBytes(value), System.Text.Encoding.UTF8.GetBytes(s.AccessToken));
  }
+ // Avoid allowing an unauthenticated caller to turn the API into an arbitrary HTTPS POST proxy.
+ private static bool IsKnownPushGateway(string host) {
+  return host.Equals("fcm.googleapis.com",StringComparison.OrdinalIgnoreCase) ||
+   host.Equals("fcmregistrations.googleapis.com",StringComparison.OrdinalIgnoreCase) ||
+   host.EndsWith(".push.services.mozilla.com",StringComparison.OrdinalIgnoreCase) ||
+   host.EndsWith(".push.apple.com",StringComparison.OrdinalIgnoreCase) ||
+   host.EndsWith(".notify.windows.com",StringComparison.OrdinalIgnoreCase) ||
+   host.EndsWith(".wns.windows.com",StringComparison.OrdinalIgnoreCase);
+ }
  private static async Task<IResult> Register(RegisterRequest data,NookDbContext db,IConfiguration config,CancellationToken ct) {
   if(new[]{"WebPush:PublicKey","WebPush:PrivateKey","WebPush:Subject"}.Any(k=>string.IsNullOrWhiteSpace(config[k])))
    return Results.Problem("Web Push is not configured.",statusCode:503);
   if(data.Keys is null || !Uri.TryCreate(data.Endpoint,UriKind.Absolute,out var uri) ||
-   uri.Scheme!="https" || data.Endpoint.Length>2000 || string.IsNullOrWhiteSpace(data.Keys.P256dh) ||
+   uri.Scheme!="https" || !IsKnownPushGateway(uri.Host) || data.Endpoint.Length>2000 || string.IsNullOrWhiteSpace(data.Keys.P256dh) ||
    string.IsNullOrWhiteSpace(data.Keys.Auth) || data.Keys.P256dh.Length>512 || data.Keys.Auth.Length>256)
    return Results.BadRequest(new { message="Invalid push subscription." });
   var s=await db.PushSubscriptions.SingleOrDefaultAsync(x=>x.Endpoint==data.Endpoint,ct);
