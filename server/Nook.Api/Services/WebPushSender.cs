@@ -3,7 +3,7 @@ using Nook.Api.Models;
 using WebPush;
 namespace Nook.Api.Services;
 public sealed class WebPushSender(IConfiguration config) {
- public async Task SendAsync(PushSubscription device, string title, string body, string url, CancellationToken ct) {
+ public async Task SendAsync(Nook.Api.Models.PushSubscription device, string title, string body, string url, CancellationToken ct) {
   var subject = config["WebPush:Subject"];
   var pub = config["WebPush:PublicKey"];
   var priv = config["WebPush:PrivateKey"];
