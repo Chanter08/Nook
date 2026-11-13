@@ -85,6 +85,10 @@ public partial class AddHoneyMustardAndBuffaloWings : Migration
                 SELECT @RecipeId, [RecipeTypeId] FROM [RecipeType]
                 WHERE LOWER([Name]) = LOWER(N'Dinner');
             END;
+            """);
+
+        migrationBuilder.Sql(
+            """
             IF NOT EXISTS (SELECT 1 FROM [Recipe] WHERE LOWER([Name]) = LOWER(N'Classic Buffalo Chicken Wings'))
             BEGIN
                 INSERT INTO [Recipe] (
