@@ -168,11 +168,16 @@ namespace Nook.Api.Data.Migrations
                     b.Property<int>("RecipeId")
                         .HasColumnType("int");
 
+                    b.Property<int>("Slot")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(1);
+
                     b.HasKey("MealPlanEntryId");
 
                     b.HasIndex("RecipeId");
 
-                    b.HasIndex("PlanDate", "MealType")
+                    b.HasIndex("PlanDate", "MealType", "Slot")
                         .IsUnique();
 
                     b.ToTable("MealPlanEntry", (string)null);
