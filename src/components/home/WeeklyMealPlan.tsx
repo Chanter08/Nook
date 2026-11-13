@@ -232,7 +232,9 @@ function WeeklyMealPlan({
                           >
                             <p className="mb-2 flex items-center gap-1 text-xs font-medium text-stone-500 dark:text-stone-400">
                               <GripVertical size={13} aria-hidden="true" />
-                              {meal.mealType}
+                              {meal.mealType === "Dinner" && dayMeals.filter((m) => m.mealType === "Dinner").length > 1
+                                ? `Dinner ${dayMeals.filter((m) => m.mealType === "Dinner").findIndex((m) => m.id === meal.id) + 1}`
+                                : meal.mealType}
                             </p>
 
                             <div className="flex items-center gap-3 sm:block">

@@ -309,7 +309,8 @@ public class NookDbContext : DbContext
                  .HasMaxLength(50)
                  .IsRequired();
 
-             entity.HasIndex(x => new { x.PlanDate, x.MealType })
+             entity.Property(x => x.Slot).HasDefaultValue(1);
+             entity.HasIndex(x => new { x.PlanDate, x.MealType, x.Slot })
                  .IsUnique();
 
              entity.HasOne(x => x.Recipe)

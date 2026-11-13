@@ -42,6 +42,13 @@ export function getNextMeal(meals: PlannedMeal[]) {
   );
 }
 
+export function getNextMeals(meals: PlannedMeal[]) {
+  const next = getNextMeal(meals);
+  if (!next) return [];
+  // All recipes for the same upcoming meal, including both dinners.
+  return meals.filter((meal) => meal.date === next.date && meal.mealType === next.mealType);
+}
+
 export function getMealContext(meal: PlannedMeal) {
   const mealDate = getMealDateTime(meal);
   const today = new Date();

@@ -38,7 +38,10 @@ function AddMealPlanModal({
 
   const usedMealTypes = existingMeals.map((meal) => meal.mealType);
   const availableMealTypes = mealTypes.filter(
-    (type) => !usedMealTypes.includes(type),
+    (type) => usedMealTypes.filter((used) => used === type).length < (type === "Dinner" ? 2 : 1),
+  );
+  const alreadyPlanned = existingMeals.some(
+    (meal) => meal.mealType === mealType && meal.recipe.id === selectedRecipeId,
   );
 
   useEffect(() => {
@@ -96,7 +99,7 @@ function AddMealPlanModal({
   }, [recipes, search]);
 
   async function submit() {
-    if (!mealType || selectedRecipeId === null || saving) return;
+    if (!mealType || selectedRecipeId === null || saving || alreadyPlanned) return;
 
     try {
       setSaving(true);
@@ -160,7 +163,7 @@ function AddMealPlanModal({
                 This day is full
               </p>
               <p className="mt-1 text-sm text-stone-500 dark:text-stone-400">
-                Breakfast, lunch, dinner and snack are already planned.
+                Breakfast, lunch, both dinners and snack are already planned.
               </p>
             </div>
           ) : (
@@ -223,13 +226,17 @@ function AddMealPlanModal({
                 ) : (
                   filteredRecipes.map((recipe) => {
                     const selected = selectedRecipeId === recipe.id;
+                    const plannedForThisMeal = existingMeals.some(
+                      (meal) => meal.mealType === mealType && meal.recipe.id === recipe.id,
+                    );
 
                     return (
                       <button
                         key={recipe.id}
                         type="button"
                         onClick={() => setSelectedRecipeId(recipe.id)}
-                        className={`flex w-full items-center gap-3 rounded-2xl border p-3 text-left transition ${selected ? "border-emerald-500 bg-emerald-50 dark:border-emerald-500/50 dark:bg-emerald-400/[0.08]" : "border-stone-200 hover:bg-stone-50 dark:border-white/[0.07] dark:hover:bg-white/[0.04]"}`}
+                        disabled={plannedForThisMeal}
+                        className={`flex w-full items-center gap-3 rounded-2xl border p-3 text-left transition ${plannedForThisMeal ? "cursor-not-allowed opacity-45" : ""} ${selected ? "border-emerald-500 bg-emerald-50 dark:border-emerald-500/50 dark:bg-emerald-400/[0.08]" : "border-stone-200 hover:bg-stone-50 dark:border-white/[0.07] dark:hover:bg-white/[0.04]"}`}
                       >
                         {recipe.imageUrl ? (
                           <img
@@ -264,6 +271,11 @@ function AddMealPlanModal({
                 )}
               </div>
 
+              {alreadyPlanned && (
+                <p className="mt-3 text-sm text-amber-700 dark:text-amber-300">
+                  This recipe is already planned for {mealType.toLowerCase()} on this day. Choose another recipe.
+                </p>
+              )}
               {error && (
                 <div className="mt-4 rounded-2xl bg-red-50 px-4 py-3 text-sm text-red-700 dark:bg-red-400/10 dark:text-red-300">
                   {error}
@@ -277,7 +289,7 @@ function AddMealPlanModal({
           <div className="border-t border-stone-100 p-4 dark:border-white/[0.06]">
             <button
               type="button"
-              disabled={!mealType || selectedRecipeId === null || saving}
+              disabled={!mealType || selectedRecipeId === null || saving || alreadyPlanned}
               onClick={() => void submit()}
               className="flex h-12 w-full items-center justify-center rounded-2xl bg-emerald-900 text-sm font-medium text-white transition hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-40 dark:bg-emerald-700 dark:hover:bg-emerald-600"
             >

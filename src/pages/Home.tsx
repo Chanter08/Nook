@@ -9,7 +9,7 @@ import WeeklyMealPlan from "@/components/home/WeeklyMealPlan";
 import { useCalendarEvents } from "@/hooks/useCalendarEvents";
 import { useMealPlan } from "@/hooks/useMealPlan";
 import { useShoppingList } from "@/hooks/useShoppingList";
-import { getGreeting, getNextMeal, getPlanStart } from "@/lib/homeDashboard";
+import { getGreeting, getNextMeals, getPlanStart } from "@/lib/homeDashboard";
 import { useNavigate } from "react-router-dom";
 
 function HomePage() {
@@ -44,7 +44,7 @@ function HomePage() {
     clearActionError,
   } = useShoppingList();
 
-  const nextMeal = getNextMeal(meals);
+  const nextMeals = getNextMeals(meals);
 
   const navigate = useNavigate();
 
@@ -81,7 +81,7 @@ function HomePage() {
       </header>
 
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 sm:items-stretch">
-        <NextMealCard meal={nextMeal} />
+        <NextMealCard meals={nextMeals} />
 
         <HomeQuickActions
           shoppingList={shoppingList}

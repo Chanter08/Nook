@@ -39,9 +39,13 @@ function PlanRecipeModal({ recipeId, recipeName, onClose, onPlanned }: PlanRecip
 
   const selectedDateKey = getDateKey(selectedDate);
 
-  const usedMealTypes = plannedMeals
-    .filter((meal) => meal.date === selectedDateKey)
-    .map((meal) => meal.mealType);
+  const mealsOnSelectedDate = plannedMeals.filter((meal) => meal.date === selectedDateKey);
+  const usedMealTypes = mealsOnSelectedDate.map((meal) => meal.mealType);
+  const selectedMealAlreadyPlanned = mealsOnSelectedDate.some(
+    (meal) => meal.mealType === selectedMealType && meal.recipe.id === recipeId,
+  );
+  const mealTypeFull = (type: string) =>
+    usedMealTypes.filter((used) => used === type).length >= (type === "Dinner" ? 2 : 1);
 
     useEffect(() => {
       async function loadPlan() {
@@ -60,7 +64,7 @@ function PlanRecipeModal({ recipeId, recipeName, onClose, onPlanned }: PlanRecip
     }, []);
 
   useEffect(() => {
-    if (usedMealTypes.includes(selectedMealType)) {
+    if (mealTypeFull(selectedMealType)) {
       setSelectedMealType("");
     }
   }, [selectedDateKey]);
@@ -80,7 +84,7 @@ function PlanRecipeModal({ recipeId, recipeName, onClose, onPlanned }: PlanRecip
   }, [onClose]);
 
   async function submit() {
-    if (!selectedMealType || saving) return;
+    if (!selectedMealType || saving || selectedMealAlreadyPlanned) return;
 
     try {
       setSaving(true);
@@ -154,14 +158,19 @@ function PlanRecipeModal({ recipeId, recipeName, onClose, onPlanned }: PlanRecip
 
                 <div className="mt-3 grid grid-cols-2 gap-2">
                   {mealTypes.map((mealType) => {
-                    const occupied = usedMealTypes.includes(mealType);
+                    const occupied = mealTypeFull(mealType);
+                    const count = usedMealTypes.filter((type) => type === mealType).length;
                     const selected = selectedMealType === mealType;
 
                     return (
                       <button key={mealType} type="button" disabled={occupied} onClick={() => setSelectedMealType(mealType)} className={`flex h-12 items-center justify-between rounded-2xl border px-4 text-sm font-medium transition ${selected ? "border-emerald-700 bg-emerald-50 text-emerald-900 dark:border-emerald-500 dark:bg-emerald-400/[0.08] dark:text-emerald-300" : occupied ? "cursor-not-allowed border-stone-100 bg-stone-50 text-stone-300 dark:border-white/[0.04] dark:bg-white/[0.02] dark:text-stone-600" : "border-stone-200 text-stone-700 hover:border-emerald-300 dark:border-white/[0.07] dark:text-stone-300"}`}>
                         {mealType}
 
-                        {occupied && <span className="text-xs font-normal">Planned</span>}
+                        {occupied ? (
+                          <span className="text-xs font-normal">Planned</span>
+                        ) : mealType === "Dinner" && count === 1 ? (
+                          <span className="text-xs font-normal">1/2</span>
+                        ) : null}
                         {selected && <Check size={16} />}
                       </button>
                     );
@@ -169,6 +178,11 @@ function PlanRecipeModal({ recipeId, recipeName, onClose, onPlanned }: PlanRecip
                 </div>
               </div>
 
+              {selectedMealAlreadyPlanned && (
+                <p className="mt-4 text-sm text-amber-700 dark:text-amber-300">
+                  This recipe is already planned for this meal. Select a different date or meal.
+                </p>
+              )}
               {error && (
                 <div className="mt-5 rounded-2xl bg-red-50 px-4 py-3 text-sm text-red-700 dark:bg-red-400/10 dark:text-red-300">
                   {error}
@@ -180,7 +194,7 @@ function PlanRecipeModal({ recipeId, recipeName, onClose, onPlanned }: PlanRecip
 
         {!loadingPlan && (
           <div className="border-t border-stone-100 p-4 dark:border-white/[0.06]">
-            <button type="button" disabled={!selectedMealType || saving} onClick={() => void submit()} className="flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-emerald-900 text-sm font-medium text-white transition hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-40 dark:bg-emerald-700 dark:hover:bg-emerald-600">
+            <button type="button" disabled={!selectedMealType || saving || selectedMealAlreadyPlanned} onClick={() => void submit()} className="flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-emerald-900 text-sm font-medium text-white transition hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-40 dark:bg-emerald-700 dark:hover:bg-emerald-600">
               <CalendarDays size={17} />
               {saving ? "Planning..." : "Add to meal plan"}
             </button>
