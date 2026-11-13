@@ -26,7 +26,13 @@ public partial class AllowTwoDinnersPerDay : Migration
                 ALTER TABLE [MealPlanEntry]
                     ADD [Slot] int NOT NULL CONSTRAINT [DF_MealPlanEntry_Slot] DEFAULT (1);
             END;
+            """);
 
+        // SQL Server compiles each command before executing it. Keep the
+        // column addition in its own batch so subsequent statements can
+        // safely reference Slot, whether it already existed or was added.
+        migrationBuilder.Sql(
+            """
             -- If a previous manual index removal permitted duplicate meals, do not
             -- delete any entries. Fail clearly when there are more than the allowed
             -- one breakfast/lunch/snack or two dinners per day.
