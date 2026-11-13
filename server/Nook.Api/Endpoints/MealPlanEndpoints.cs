@@ -37,6 +37,7 @@ public static class MealPlanEndpoints
             .Where(x => x.PlanDate >= start && x.PlanDate < end)
             .OrderBy(x => x.PlanDate)
             .ThenBy(x => x.MealType)
+            .ThenBy(x => x.Slot)
             .Select(x => new MealPlanEntryResponse
             {
                 Id = x.MealPlanEntryId,
@@ -54,53 +55,69 @@ public static class MealPlanEndpoints
         return Results.Ok(entries);
     }
 
+    private static int FindAvailableSlot(string mealType, IReadOnlyCollection<int> occupiedSlots)
+    {
+        var maxSlots = mealType == "Dinner" ? 2 : 1;
+        return Enumerable.Range(1, maxSlots).FirstOrDefault(slot => !occupiedSlots.Contains(slot));
+    }
+
     private static async Task<IResult> AddEntry(AddMealPlanEntryRequest request, NookDbContext db)
     {
+        if (request.Date == default)
+            return Results.BadRequest(new { message = "A valid date is required." });
+
         if (!AllowedMealTypes.Contains(request.MealType, StringComparer.OrdinalIgnoreCase))
-        {
             return Results.BadRequest(new { message = "Invalid meal type." });
-        }
 
         var mealType = AllowedMealTypes.First(x =>
             x.Equals(request.MealType, StringComparison.OrdinalIgnoreCase));
 
-        var recipeExists = await db.Recipes
-            .AsNoTracking()
+        var recipeExists = await db.Recipes.AsNoTracking()
             .AnyAsync(x => x.RecipeId == request.RecipeId && !x.IsArchived);
-
         if (!recipeExists)
-        {
             return Results.NotFound(new { message = "Recipe not found." });
-        }
 
-        var slotExists = await db.MealPlanEntries
-            .AnyAsync(x => x.PlanDate == request.Date && x.MealType == mealType);
+        var existing = await db.MealPlanEntries.AsNoTracking()
+            .Where(x => x.PlanDate == request.Date && x.MealType == mealType)
+            .Select(x => new { x.Slot, x.RecipeId })
+            .ToListAsync();
 
-        if (slotExists)
-        {
-            return Results.Conflict(new
-            {
-                message = $"{mealType} is already planned for this date."
+        if (existing.Any(x => x.RecipeId == request.RecipeId))
+            return Results.Conflict(new { message = "That recipe is already planned for this meal on this date." });
+
+        var slot = FindAvailableSlot(mealType, existing.Select(x => x.Slot).ToArray());
+        if (slot == 0)
+            return Results.Conflict(new {
+                message = mealType == "Dinner"
+                    ? "Two dinners are already planned for this date."
+                    : $"{mealType} is already planned for this date."
             });
-        }
 
         var entry = new MealPlanEntry
         {
             PlanDate = request.Date,
             MealType = mealType,
             RecipeId = request.RecipeId,
+            Slot = slot,
             CreatedDate = DateTime.UtcNow
         };
 
         db.MealPlanEntries.Add(entry);
-        await db.SaveChangesAsync();
+        try
+        {
+            await db.SaveChangesAsync();
+        }
+        catch (DbUpdateException)
+        {
+            // Unique (date, meal type, slot) index also protects concurrent requests.
+            return Results.Conflict(new {
+                message = "That meal slot was just taken. Refresh the plan and try again."
+            });
+        }
 
         return Results.Created(
             $"/api/meal-plan/{entry.MealPlanEntryId}",
-            new CreateMealPlanEntryResponse
-            {
-                Id = entry.MealPlanEntryId
-            });
+            new CreateMealPlanEntryResponse { Id = entry.MealPlanEntryId });
     }
 
     private sealed record MoveMealPlanEntryRequest(DateOnly Date);
@@ -111,37 +128,40 @@ public static class MealPlanEndpoints
         var entry = await db.MealPlanEntries.FindAsync(id);
         if (entry is null)
             return Results.NotFound(new { message = "Meal plan entry not found." });
-
         if (request.Date == default)
             return Results.BadRequest(new { message = "A valid destination date is required." });
-
         if (entry.PlanDate == request.Date)
             return Results.NoContent();
 
-        // Preserve meal type and never overwrite an occupied slot.
-        var occupied = await db.MealPlanEntries.AnyAsync(x =>
-            x.MealPlanEntryId != id &&
-            x.PlanDate == request.Date &&
-            x.MealType == entry.MealType);
+        var existing = await db.MealPlanEntries.AsNoTracking()
+            .Where(x => x.MealPlanEntryId != id &&
+                x.PlanDate == request.Date && x.MealType == entry.MealType)
+            .Select(x => new { x.Slot, x.RecipeId })
+            .ToListAsync();
 
-        if (occupied)
+        if (existing.Any(x => x.RecipeId == entry.RecipeId))
+            return Results.Conflict(new { message = "That recipe is already planned for this meal on the destination date." });
+
+        var slot = FindAvailableSlot(entry.MealType, existing.Select(x => x.Slot).ToArray());
+        if (slot == 0)
             return Results.Conflict(new {
-                message = $"{entry.MealType} is already planned for that day. Move it first."
+                message = entry.MealType == "Dinner"
+                    ? "Two dinners are already planned for that date. Move or remove one first."
+                    : $"{entry.MealType} is already planned for that day. Move it first."
             });
 
         entry.PlanDate = request.Date;
+        entry.Slot = slot;
         try
         {
             await db.SaveChangesAsync();
         }
         catch (DbUpdateException)
         {
-            // The unique (PlanDate, MealType) index guards concurrent moves.
             return Results.Conflict(new {
                 message = "That meal slot is no longer available. Refresh and try again."
             });
         }
-
         return Results.NoContent();
     }
 
