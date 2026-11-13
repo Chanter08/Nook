@@ -6,50 +6,127 @@ using Nook.Api.Data;
 
 namespace Nook.Api.Data.Migrations;
 
-/// <summary>Keep existing meal plans and allow a second, independent dinner per day.</summary>
+/// <summary>
+/// Make the two-dinner migration resilient to a database whose old
+/// (PlanDate, MealType) index was previously removed outside EF migrations.
+/// Keep all existing meal plans; never discard entries to resolve conflicts.
+/// </summary>
 [DbContext(typeof(NookDbContext))]
 [Migration("20261113204000_AllowTwoDinnersPerDay")]
 public partial class AllowTwoDinnersPerDay : Migration
 {
     protected override void Up(MigrationBuilder migrationBuilder)
     {
-        migrationBuilder.AddColumn<int>(
-            name: "Slot", table: "MealPlanEntry", type: "int",
-            nullable: false, defaultValue: 1);
-
-        migrationBuilder.DropIndex(
-            name: "IX_MealPlanEntry_PlanDate_MealType", table: "MealPlanEntry");
-
-        migrationBuilder.CreateIndex(
-            name: "IX_MealPlanEntry_PlanDate_MealType_Slot",
-            table: "MealPlanEntry",
-            columns: new[] { "PlanDate", "MealType", "Slot" },
-            unique: true);
-
         migrationBuilder.Sql(
             """
-            ALTER TABLE [MealPlanEntry]
-            ADD CONSTRAINT [CK_MealPlanEntry_DinnerSlot]
-                CHECK (([MealType] = N'Dinner' AND [Slot] IN (1, 2))
-                    OR ([MealType] <> N'Dinner' AND [Slot] = 1));
+            -- The existing production database can differ from the initial EF index history.
+            -- Use a conditional DROP rather than assuming the old index exists.
+            IF COL_LENGTH(N'dbo.MealPlanEntry', N'Slot') IS NULL
+            BEGIN
+                ALTER TABLE [MealPlanEntry]
+                    ADD [Slot] int NOT NULL CONSTRAINT [DF_MealPlanEntry_Slot] DEFAULT (1);
+            END;
+
+            -- If a previous manual index removal permitted duplicate meals, do not
+            -- delete any entries. Fail clearly when there are more than the allowed
+            -- one breakfast/lunch/snack or two dinners per day.
+            IF EXISTS (
+                SELECT 1 FROM [MealPlanEntry]
+                GROUP BY [PlanDate], [MealType]
+                HAVING COUNT(*) > CASE WHEN [MealType] = N'Dinner' THEN 2 ELSE 1 END
+            )
+            BEGIN
+                THROW 51001, 'Meal plan has more entries than supported for a date and meal type. Resolve duplicates manually; no meals were deleted.', 1;
+            END;
+
+            -- Preserve two already-planned dinners, if present, and give them
+            -- deterministic distinct slots before enforcing the new unique index.
+            ;WITH DinnerSlots AS (
+                SELECT [MealPlanEntryId],
+                       ROW_NUMBER() OVER (
+                           PARTITION BY [PlanDate] ORDER BY [MealPlanEntryId]
+                       ) AS [NewSlot]
+                FROM [MealPlanEntry]
+                WHERE [MealType] = N'Dinner'
+            )
+            UPDATE m SET [Slot] = d.[NewSlot]
+            FROM [MealPlanEntry] AS m
+            INNER JOIN DinnerSlots AS d
+                ON m.[MealPlanEntryId] = d.[MealPlanEntryId];
+
+            IF EXISTS (
+                SELECT 1 FROM sys.indexes
+                WHERE object_id = OBJECT_ID(N'[MealPlanEntry]')
+                    AND name = N'IX_MealPlanEntry_PlanDate_MealType'
+            )
+            BEGIN
+                DROP INDEX [IX_MealPlanEntry_PlanDate_MealType] ON [MealPlanEntry];
+            END;
+
+            IF NOT EXISTS (
+                SELECT 1 FROM sys.indexes
+                WHERE object_id = OBJECT_ID(N'[MealPlanEntry]')
+                    AND name = N'IX_MealPlanEntry_PlanDate_MealType_Slot'
+            )
+            BEGIN
+                CREATE UNIQUE INDEX [IX_MealPlanEntry_PlanDate_MealType_Slot]
+                    ON [MealPlanEntry] ([PlanDate], [MealType], [Slot]);
+            END;
+
+            IF NOT EXISTS (
+                SELECT 1 FROM sys.check_constraints
+                WHERE parent_object_id = OBJECT_ID(N'[MealPlanEntry]')
+                    AND name = N'CK_MealPlanEntry_DinnerSlot'
+            )
+            BEGIN
+                ALTER TABLE [MealPlanEntry]
+                    ADD CONSTRAINT [CK_MealPlanEntry_DinnerSlot]
+                        CHECK (
+                            ([MealType] = N'Dinner' AND [Slot] IN (1, 2))
+                            OR ([MealType] <> N'Dinner' AND [Slot] = 1)
+                        );
+            END;
             """);
     }
 
     protected override void Down(MigrationBuilder migrationBuilder)
     {
-        // Don't silently discard an existing second dinner on rollback.
         migrationBuilder.Sql(
             """
+            -- An unsafe rollback would discard or invalidate second dinners.
             IF EXISTS (SELECT 1 FROM [MealPlanEntry] WHERE [Slot] <> 1)
-                THROW 50001, 'Cannot revert two-dinner support while second dinners exist.', 1;
-            ALTER TABLE [MealPlanEntry] DROP CONSTRAINT [CK_MealPlanEntry_DinnerSlot];
+            BEGIN
+                THROW 51002, 'Cannot revert two-dinner support while second dinners exist.', 1;
+            END;
+
+            IF EXISTS (
+                SELECT 1 FROM sys.check_constraints
+                WHERE parent_object_id = OBJECT_ID(N'[MealPlanEntry]')
+                    AND name = N'CK_MealPlanEntry_DinnerSlot'
+            )
+                ALTER TABLE [MealPlanEntry] DROP CONSTRAINT [CK_MealPlanEntry_DinnerSlot];
+
+            IF EXISTS (
+                SELECT 1 FROM sys.indexes
+                WHERE object_id = OBJECT_ID(N'[MealPlanEntry]')
+                    AND name = N'IX_MealPlanEntry_PlanDate_MealType_Slot'
+            )
+                DROP INDEX [IX_MealPlanEntry_PlanDate_MealType_Slot] ON [MealPlanEntry];
             """);
 
-        migrationBuilder.DropIndex(
-            name: "IX_MealPlanEntry_PlanDate_MealType_Slot", table: "MealPlanEntry");
+        // EF's SQL Server provider also removes the default constraint
+        // attached to Slot before dropping the column.
         migrationBuilder.DropColumn(name: "Slot", table: "MealPlanEntry");
-        migrationBuilder.CreateIndex(
-            name: "IX_MealPlanEntry_PlanDate_MealType", table: "MealPlanEntry",
-            columns: new[] { "PlanDate", "MealType" }, unique: true);
+
+        migrationBuilder.Sql(
+            """
+            IF NOT EXISTS (
+                SELECT 1 FROM sys.indexes
+                WHERE object_id = OBJECT_ID(N'[MealPlanEntry]')
+                    AND name = N'IX_MealPlanEntry_PlanDate_MealType'
+            )
+                CREATE UNIQUE INDEX [IX_MealPlanEntry_PlanDate_MealType]
+                    ON [MealPlanEntry] ([PlanDate], [MealType]);
+            """);
     }
 }
