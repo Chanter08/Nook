@@ -1,9 +1,9 @@
-import { Search, UtensilsCrossed, X } from "lucide-react";
+import { Check, Search, UtensilsCrossed, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import type { PlannedMeal } from "@/types/mealPlan";
 import type { RecipeSummary } from "@/types/recipe";
 import { getRecipes } from "@/api/recipes";
-import { addMealPlanEntry } from "@/api/mealPlan";
+import { addMealPlanEntries } from "@/api/mealPlan";
 
 interface AddMealPlanModalProps {
   date: Date;
@@ -29,9 +29,16 @@ function AddMealPlanModal({
   onAdded,
 }: AddMealPlanModalProps) {
   const [recipes, setRecipes] = useState<RecipeSummary[]>([]);
-  const [mealType, setMealType] = useState("");
+  const [mealType, setMealType] = useState(() => {
+    // Returning to a date with one dinner should offer the second dinner first.
+    const dinnerCount = existingMeals.filter((meal) => meal.mealType === "Dinner").length;
+    if (dinnerCount < 2) return "Dinner";
+    return mealTypes.find((type) =>
+      existingMeals.filter((meal) => meal.mealType === type).length < 1
+    ) ?? "";
+  });
   const [search, setSearch] = useState("");
-  const [selectedRecipeId, setSelectedRecipeId] = useState<number | null>(null);
+  const [selectedRecipeIds, setSelectedRecipeIds] = useState<number[]>([]);
   const [loadingRecipes, setLoadingRecipes] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -40,15 +47,20 @@ function AddMealPlanModal({
   const availableMealTypes = mealTypes.filter(
     (type) => usedMealTypes.filter((used) => used === type).length < (type === "Dinner" ? 2 : 1),
   );
-  const alreadyPlanned = existingMeals.some(
-    (meal) => meal.mealType === mealType && meal.recipe.id === selectedRecipeId,
-  );
+  const currentMealRecipes = existingMeals.filter((meal) => meal.mealType === mealType);
+  const maxSlots = mealType === "Dinner" ? 2 : 1;
+  const availableToSelect = Math.max(0, maxSlots - currentMealRecipes.length);
 
-  useEffect(() => {
-    if (availableMealTypes.length > 0) {
-      setMealType(availableMealTypes[0]);
-    }
-  }, []);
+  function toggleRecipe(recipeId: number) {
+    if (currentMealRecipes.some((meal) => meal.recipe.id === recipeId)) return;
+    setSelectedRecipeIds((current) => {
+      if (current.includes(recipeId)) return current.filter((id) => id !== recipeId);
+      // Single-meal slots keep the familiar radio-style behaviour.
+      if (availableToSelect === 1) return [recipeId];
+      if (current.length >= availableToSelect) return current;
+      return [...current, recipeId];
+    });
+  }
 
   useEffect(() => {
     async function loadRecipes() {
@@ -99,16 +111,16 @@ function AddMealPlanModal({
   }, [recipes, search]);
 
   async function submit() {
-    if (!mealType || selectedRecipeId === null || saving || alreadyPlanned) return;
+    if (!mealType || selectedRecipeIds.length === 0 || saving) return;
 
     try {
       setSaving(true);
       setError(null);
 
-      await addMealPlanEntry({
+      await addMealPlanEntries({
         date: getDateKey(date),
         mealType,
-        recipeId: selectedRecipeId,
+        recipeIds: selectedRecipeIds,
       });
 
       await onAdded();
@@ -179,7 +191,10 @@ function AddMealPlanModal({
                 <select
                   id="meal-plan-type"
                   value={mealType}
-                  onChange={(event) => setMealType(event.target.value)}
+                  onChange={(event) => {
+                    setMealType(event.target.value);
+                    setSelectedRecipeIds([]);
+                  }}
                   className="mt-2 h-12 w-full rounded-2xl border border-stone-200 bg-stone-50 px-4 text-sm text-stone-900 outline-none dark:border-white/[0.08] dark:bg-[#292e2a] dark:text-stone-100"
                 >
                   {availableMealTypes.map((type) => (
@@ -188,6 +203,13 @@ function AddMealPlanModal({
                     </option>
                   ))}
                 </select>
+                {mealType === "Dinner" && (
+                  <p className="mt-2 text-sm text-stone-500 dark:text-stone-400">
+                    {currentMealRecipes.length === 0
+                      ? "Select up to 2 recipes for the same dinner."
+                      : "1 dinner already planned. Select a second recipe."}
+                  </p>
+                )}
               </div>
 
               <div className="mt-5">
@@ -195,7 +217,12 @@ function AddMealPlanModal({
                   htmlFor="meal-plan-search"
                   className="text-sm font-medium text-stone-700 dark:text-stone-300"
                 >
-                  Recipe
+                  {mealType === "Dinner" ? "Dinner recipes" : "Recipe"}
+                  {mealType === "Dinner" && (
+                    <span className="ml-2 text-xs font-normal text-emerald-700 dark:text-emerald-400">
+                      {currentMealRecipes.length + selectedRecipeIds.length}/2 selected
+                    </span>
+                  )}
                 </label>
 
                 <div className="relative mt-2">
@@ -214,6 +241,15 @@ function AddMealPlanModal({
                 </div>
               </div>
 
+              {mealType === "Dinner" && selectedRecipeIds.length > 0 && (
+                <div className="mt-3 rounded-xl bg-emerald-50 p-3 text-xs text-emerald-900 dark:bg-emerald-400/10 dark:text-emerald-300">
+                  <p className="font-semibold">Selected for dinner:</p>
+                  <p className="mt-1">
+                    {selectedRecipeIds.map((id) => recipes.find((recipe) => recipe.id === id)?.name).filter(Boolean).join(" + ")}
+                  </p>
+                </div>
+              )}
+
               <div className="mt-4 space-y-2">
                 {loadingRecipes ? (
                   <p className="py-6 text-center text-sm text-stone-500 dark:text-stone-400">
@@ -225,7 +261,7 @@ function AddMealPlanModal({
                   </p>
                 ) : (
                   filteredRecipes.map((recipe) => {
-                    const selected = selectedRecipeId === recipe.id;
+                    const selected = selectedRecipeIds.includes(recipe.id);
                     const plannedForThisMeal = existingMeals.some(
                       (meal) => meal.mealType === mealType && meal.recipe.id === recipe.id,
                     );
@@ -234,7 +270,8 @@ function AddMealPlanModal({
                       <button
                         key={recipe.id}
                         type="button"
-                        onClick={() => setSelectedRecipeId(recipe.id)}
+                        onClick={() => toggleRecipe(recipe.id)}
+                        aria-pressed={selected}
                         disabled={plannedForThisMeal}
                         className={`flex w-full items-center gap-3 rounded-2xl border p-3 text-left transition ${plannedForThisMeal ? "cursor-not-allowed opacity-45" : ""} ${selected ? "border-emerald-500 bg-emerald-50 dark:border-emerald-500/50 dark:bg-emerald-400/[0.08]" : "border-stone-200 hover:bg-stone-50 dark:border-white/[0.07] dark:hover:bg-white/[0.04]"}`}
                       >
@@ -263,17 +300,20 @@ function AddMealPlanModal({
                         </div>
 
                         <span
-                          className={`h-5 w-5 shrink-0 rounded-full border-2 ${selected ? "border-emerald-700 bg-emerald-700 ring-4 ring-emerald-100 dark:border-emerald-500 dark:bg-emerald-500 dark:ring-emerald-400/10" : "border-stone-300 dark:border-stone-600"}`}
-                        />
+                          aria-hidden="true"
+                          className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-md border-2 ${selected ? "border-emerald-700 bg-emerald-700 text-white dark:border-emerald-500 dark:bg-emerald-500" : "border-stone-300 dark:border-stone-600"}`}
+                        >
+                          {selected && <Check size={13} strokeWidth={3} />}
+                        </span>
                       </button>
                     );
                   })
                 )}
               </div>
 
-              {alreadyPlanned && (
-                <p className="mt-3 text-sm text-amber-700 dark:text-amber-300">
-                  This recipe is already planned for {mealType.toLowerCase()} on this day. Choose another recipe.
+              {mealType === "Dinner" && availableToSelect === 2 && selectedRecipeIds.length === 2 && (
+                <p className="mt-3 text-sm text-emerald-700 dark:text-emerald-400">
+                  Two dinner recipes selected. Tap either to change your selection.
                 </p>
               )}
               {error && (
@@ -289,11 +329,11 @@ function AddMealPlanModal({
           <div className="border-t border-stone-100 p-4 dark:border-white/[0.06]">
             <button
               type="button"
-              disabled={!mealType || selectedRecipeId === null || saving || alreadyPlanned}
+              disabled={!mealType || selectedRecipeIds.length === 0 || saving}
               onClick={() => void submit()}
               className="flex h-12 w-full items-center justify-center rounded-2xl bg-emerald-900 text-sm font-medium text-white transition hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-40 dark:bg-emerald-700 dark:hover:bg-emerald-600"
             >
-              {saving ? "Adding..." : "Add to plan"}
+              {saving ? "Adding..." : selectedRecipeIds.length > 1 ? "Add 2 dinners to plan" : "Add to plan"}
             </button>
           </div>
         )}
