@@ -1,6 +1,7 @@
 using System.Net.Http.Headers;
 using Microsoft.EntityFrameworkCore;
 using Nook.Api.Data;
+using Nook.Api.Models;
 using Nook.Api.Endpoints;
 using Nook.Api.Integrations.Recipes.Spoonacular;
 using Nook.Api.Services;
@@ -108,6 +109,72 @@ if (args.Any(x => x.Equals("--migrate", StringComparison.OrdinalIgnoreCase)))
 
     Console.WriteLine("Database migrations complete.");
 
+    return;
+}
+
+// Production smoke check: prove the live SQL Server accepts two distinct dinners
+// for the same date and meal type. The inserts are inside a rolled-back
+// transaction so no test meal or shopping data persists.
+if (args.Any(x => x.Equals("--verify-dinner-slots", StringComparison.OrdinalIgnoreCase)))
+{
+    await using var scope = app.Services.CreateAsyncScope();
+    var db = scope.ServiceProvider.GetRequiredService<NookDbContext>();
+
+    var recipeIds = await db.Recipes.AsNoTracking()
+        .Where(x => !x.IsArchived)
+        .OrderBy(x => x.RecipeId)
+        .Select(x => x.RecipeId)
+        .Take(2)
+        .ToListAsync();
+
+    if (recipeIds.Count < 2)
+        throw new InvalidOperationException("Dinner slot smoke test requires two existing recipes.");
+
+    var candidate = new DateOnly(2099, 1, 1);
+    var found = false;
+    for (var offset = 0; offset < 100; offset++)
+    {
+        var date = candidate.AddDays(offset);
+        if (!await db.MealPlanEntries.AnyAsync(x => x.PlanDate == date))
+        {
+            candidate = date;
+            found = true;
+            break;
+        }
+    }
+    if (!found)
+        throw new InvalidOperationException("No empty future date for the dinner-slot smoke test.");
+
+    await using (var transaction = await db.Database.BeginTransactionAsync())
+    {
+        try
+        {
+            db.MealPlanEntries.AddRange(
+                new MealPlanEntry
+                {
+                    PlanDate = candidate, MealType = "Dinner", Slot = 1,
+                    RecipeId = recipeIds[0], CreatedDate = DateTime.UtcNow
+                },
+                new MealPlanEntry
+                {
+                    PlanDate = candidate, MealType = "Dinner", Slot = 2,
+                    RecipeId = recipeIds[1], CreatedDate = DateTime.UtcNow
+                }
+            );
+            await db.SaveChangesAsync();
+
+            var count = await db.MealPlanEntries.AsNoTracking()
+                .CountAsync(x => x.PlanDate == candidate && x.MealType == "Dinner");
+            if (count != 2)
+                throw new InvalidOperationException($"Expected two dinner entries; found {count}.");
+        }
+        finally
+        {
+            await transaction.RollbackAsync();
+        }
+    }
+
+    Console.WriteLine("Live database verified: two dinners saved together; test data rolled back.");
     return;
 }
 
