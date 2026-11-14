@@ -1,4 +1,4 @@
-import { Search, UtensilsCrossed, X } from "lucide-react";
+import { Check, Search, UtensilsCrossed, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import type { PlannedMeal } from "@/types/mealPlan";
 import type { RecipeSummary } from "@/types/recipe";
@@ -241,6 +241,15 @@ function AddMealPlanModal({
                 </div>
               </div>
 
+              {mealType === "Dinner" && selectedRecipeIds.length > 0 && (
+                <div className="mt-3 rounded-xl bg-emerald-50 p-3 text-xs text-emerald-900 dark:bg-emerald-400/10 dark:text-emerald-300">
+                  <p className="font-semibold">Selected for dinner:</p>
+                  <p className="mt-1">
+                    {selectedRecipeIds.map((id) => recipes.find((recipe) => recipe.id === id)?.name).filter(Boolean).join(" + ")}
+                  </p>
+                </div>
+              )}
+
               <div className="mt-4 space-y-2">
                 {loadingRecipes ? (
                   <p className="py-6 text-center text-sm text-stone-500 dark:text-stone-400">
@@ -291,8 +300,11 @@ function AddMealPlanModal({
                         </div>
 
                         <span
-                          className={`h-5 w-5 shrink-0 rounded-full border-2 ${selected ? "border-emerald-700 bg-emerald-700 ring-4 ring-emerald-100 dark:border-emerald-500 dark:bg-emerald-500 dark:ring-emerald-400/10" : "border-stone-300 dark:border-stone-600"}`}
-                        />
+                          aria-hidden="true"
+                          className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-md border-2 ${selected ? "border-emerald-700 bg-emerald-700 text-white dark:border-emerald-500 dark:bg-emerald-500" : "border-stone-300 dark:border-stone-600"}`}
+                        >
+                          {selected && <Check size={13} strokeWidth={3} />}
+                        </span>
                       </button>
                     );
                   })
