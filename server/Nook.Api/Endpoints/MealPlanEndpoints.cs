@@ -57,8 +57,6 @@ public static class MealPlanEndpoints
     }
 
 
-    private sealed record AddMealPlanEntriesRequest(DateOnly Date, string MealType, List<int> RecipeIds);
-
     /// <summary>
     /// Add one or two distinct dinner recipes in one atomic save.
     /// Other meals still have a capacity of one per date.
