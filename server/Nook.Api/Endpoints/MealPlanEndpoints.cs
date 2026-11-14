@@ -22,6 +22,7 @@ public static class MealPlanEndpoints
 
         group.MapGet("/week", GetWeek);
         group.MapPost("", AddEntry);
+        group.MapPost("/batch", AddEntriesBatch);
         group.MapDelete("/{id:int}", DeleteEntry);
         group.MapPatch("/{id:int}/move", MoveEntry);
 
@@ -53,6 +54,90 @@ public static class MealPlanEndpoints
             .ToListAsync();
 
         return Results.Ok(entries);
+    }
+
+
+    private sealed record AddMealPlanEntriesRequest(DateOnly Date, string MealType, List<int> RecipeIds);
+
+    /// <summary>
+    /// Add one or two distinct dinner recipes in one atomic save.
+    /// Other meals still have a capacity of one per date.
+    /// </summary>
+    private static async Task<IResult> AddEntriesBatch(
+        AddMealPlanEntriesRequest request, NookDbContext db)
+    {
+        if (request.Date == default)
+            return Results.BadRequest(new { message = "A valid date is required." });
+
+        if (string.IsNullOrWhiteSpace(request.MealType) ||
+            !AllowedMealTypes.Contains(request.MealType, StringComparer.OrdinalIgnoreCase))
+            return Results.BadRequest(new { message = "Invalid meal type." });
+
+        var mealType = AllowedMealTypes.First(type =>
+            type.Equals(request.MealType, StringComparison.OrdinalIgnoreCase));
+        var maxSlots = mealType == "Dinner" ? 2 : 1;
+        var recipeIds = request.RecipeIds;
+
+        if (recipeIds is null || recipeIds.Count == 0 || recipeIds.Count > maxSlots ||
+            recipeIds.Any(id => id <= 0) || recipeIds.Distinct().Count() != recipeIds.Count)
+            return Results.BadRequest(new {
+                message = mealType == "Dinner"
+                    ? "Choose one or two different dinner recipes."
+                    : "Choose exactly one recipe for this meal."
+            });
+
+        var existing = await db.MealPlanEntries.AsNoTracking()
+            .Where(x => x.PlanDate == request.Date && x.MealType == mealType)
+            .Select(x => new { x.Slot, x.RecipeId })
+            .ToListAsync();
+
+        if (recipeIds.Any(id => existing.Any(item => item.RecipeId == id)))
+            return Results.Conflict(new { message = "One of those recipes is already planned for this meal on that date." });
+
+        var availableSlots = Enumerable.Range(1, maxSlots)
+            .Where(slot => existing.All(item => item.Slot != slot))
+            .Take(recipeIds.Count)
+            .ToList();
+
+        if (availableSlots.Count < recipeIds.Count)
+            return Results.Conflict(new {
+                message = mealType == "Dinner"
+                    ? "This date already has two dinners. Remove one to add another."
+                    : $"{mealType} is already planned for this date."
+            });
+
+        var activeRecipeIds = await db.Recipes.AsNoTracking()
+            .Where(x => recipeIds.Contains(x.RecipeId) && !x.IsArchived)
+            .Select(x => x.RecipeId)
+            .ToListAsync();
+
+        if (activeRecipeIds.Count != recipeIds.Count)
+            return Results.NotFound(new { message = "One or more selected recipes could not be found." });
+
+        var entries = recipeIds.Select((recipeId, index) => new MealPlanEntry
+        {
+            PlanDate = request.Date,
+            MealType = mealType,
+            RecipeId = recipeId,
+            Slot = availableSlots[index],
+            CreatedDate = DateTime.UtcNow
+        }).ToList();
+
+        db.MealPlanEntries.AddRange(entries);
+
+        try
+        {
+            // SaveChanges uses a single transaction for all inserts: no half-planned dinners.
+            await db.SaveChangesAsync();
+        }
+        catch (DbUpdateException)
+        {
+            return Results.Conflict(new {
+                message = "The database rejected these dinner slots. Please refresh and try again."
+            });
+        }
+
+        return Results.Created("/api/meal-plan", new { ids = entries.Select(x => x.MealPlanEntryId).ToList() });
     }
 
     private static int FindAvailableSlot(string mealType, IReadOnlyCollection<int> occupiedSlots)
