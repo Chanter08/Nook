@@ -20,6 +20,21 @@ export function addMealPlanEntry(payload: AddMealPlanEntryPayload) {
   });
 }
 
+
+export interface AddMealPlanEntriesPayload {
+  date: string;
+  mealType: string;
+  recipeIds: number[];
+}
+
+// One request allows selecting two dinners at once; the API saves both atomically.
+export function addMealPlanEntries(payload: AddMealPlanEntriesPayload) {
+  return apiRequest<{ ids: number[] }>("/api/meal-plan/batch", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
 export function deleteMealPlanEntry(id: number) {
   return apiRequest<void>(`/api/meal-plan/${id}`, {
     method: "DELETE",
