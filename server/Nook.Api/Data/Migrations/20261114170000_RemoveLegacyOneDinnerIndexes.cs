@@ -85,6 +85,49 @@ public partial class RemoveLegacyOneDinnerIndexes : Migration
                   AND [is_unique] = 1
             )
                 THROW 51011, 'The two-dinner unique slot index is missing.', 1;
+
+            -- Verify the actual live database can accept two dinners. The
+            -- smoke entries are rolled back to a savepoint, leaving no data.
+            IF @@TRANCOUNT = 0
+                THROW 51012, 'Two-dinner smoke test requires a migration transaction.', 1;
+
+            DECLARE @RecipeA int;
+            DECLARE @RecipeB int;
+            SELECT @RecipeA = MIN([RecipeId])
+            FROM [Recipe] WHERE [IsArchived] = 0;
+            SELECT @RecipeB = MIN([RecipeId])
+            FROM [Recipe] WHERE [IsArchived] = 0 AND [RecipeId] > @RecipeA;
+
+            IF @RecipeA IS NULL OR @RecipeB IS NULL
+                THROW 51013, 'Need two active recipes to validate dinner slots.', 1;
+
+            DECLARE @TestDate date = '2099-01-01';
+            WHILE EXISTS (SELECT 1 FROM [MealPlanEntry] WHERE [PlanDate] = @TestDate)
+                AND @TestDate < '2099-12-31'
+                SET @TestDate = DATEADD(day, 1, @TestDate);
+
+            IF EXISTS (SELECT 1 FROM [MealPlanEntry] WHERE [PlanDate] = @TestDate)
+                THROW 51014, 'No free test date for two-dinner smoke test.', 1;
+
+            SAVE TRANSACTION VerifyTwoDinnerSlots;
+            BEGIN TRY
+                INSERT INTO [MealPlanEntry] ([PlanDate], [MealType], [Slot], [RecipeId], [CreatedDate])
+                VALUES
+                    (@TestDate, N'Dinner', 1, @RecipeA, SYSUTCDATETIME()),
+                    (@TestDate, N'Dinner', 2, @RecipeB, SYSUTCDATETIME());
+
+                IF (SELECT COUNT(*) FROM [MealPlanEntry]
+                    WHERE [PlanDate] = @TestDate AND [MealType] = N'Dinner') <> 2
+                    THROW 51015, 'Two dinner entries were not persisted.', 1;
+
+                ROLLBACK TRANSACTION VerifyTwoDinnerSlots;
+                PRINT N'Validated two dinner entries in live SQL Server; test rows rolled back.';
+            END TRY
+            BEGIN CATCH
+                IF XACT_STATE() = 1
+                    ROLLBACK TRANSACTION VerifyTwoDinnerSlots;
+                THROW;
+            END CATCH;
             """);
     }
 
