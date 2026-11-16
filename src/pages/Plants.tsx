@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
-import { ArrowLeft, Leaf, Plus, Sprout, Trash2 } from "lucide-react";
+import { ArrowLeft, CloudRain, Leaf, Plus, Sprout, SunMedium, Trash2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import ThemeToggle from "@/components/ThemeToggle";
-import { createPlant, deletePlant, getPlants } from "@/api/plants";
+import { createPlant, deletePlant, getGardenWeather, getPlants } from "@/api/plants";
 import { assetUrl } from "@/api/client";
-import type { PlantPayload, PlantSummary } from "@/types/plant";
+import type { GardenWeatherContext, PlantPayload, PlantSummary } from "@/types/plant";
 
 const emptyPlant: PlantPayload = { name: "", species: "", variety: "", location: "", acquiredDate: null, notes: "" };
 
@@ -15,6 +15,7 @@ export default function PlantsPage() {
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState<PlantPayload>(emptyPlant);
   const [error, setError] = useState<string | null>(null);
+  const [weather, setWeather] = useState<GardenWeatherContext | null>(null);
 
   async function refresh() {
     try { setPlants(await getPlants()); setError(null); }
@@ -22,7 +23,7 @@ export default function PlantsPage() {
     finally { setLoading(false); }
   }
 
-  useEffect(() => { void refresh(); }, []);
+  useEffect(() => { void refresh(); void getGardenWeather().then(setWeather).catch(() => setWeather(null)); }, []);
 
   async function submit(event: React.FormEvent) {
     event.preventDefault();
@@ -62,6 +63,26 @@ export default function PlantsPage() {
         </div>
         <button onClick={() => setShowForm(true)} className="flex h-11 shrink-0 items-center gap-2 rounded-full bg-emerald-900 px-4 text-sm font-medium text-white dark:bg-emerald-700"><Plus size={17}/>Add plant</button>
       </header>
+
+      {weather && (
+        <section className="mb-6 rounded-3xl bg-sky-50 p-5 dark:bg-sky-400/[0.06]">
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wide text-sky-700 dark:text-sky-300">Malta today</p>
+              <p className="mt-1 text-xl font-semibold">{weather.today.temperatureMaxC.toFixed(0)}°C · {weather.today.rainProbabilityPercent.toFixed(0)}% rain</p>
+            </div>
+            {weather.rainNext48HoursMm >= 2 ? <CloudRain className="text-sky-700" size={28}/> : <SunMedium className="text-amber-600" size={28}/>}
+          </div>
+          <div className="mt-4 grid grid-cols-3 gap-2 text-center text-xs">
+            <div className="rounded-2xl bg-white/70 p-3 dark:bg-white/[0.05]"><p className="text-lg font-semibold">{weather.rainNext48HoursMm.toFixed(1)}</p><p className="text-stone-500">mm next 48h</p></div>
+            <div className="rounded-2xl bg-white/70 p-3 dark:bg-white/[0.05]"><p className="text-lg font-semibold">{weather.today.et0Mm.toFixed(1)}</p><p className="text-stone-500">ET₀ mm today</p></div>
+            <div className="rounded-2xl bg-white/70 p-3 dark:bg-white/[0.05]"><p className="text-lg font-semibold">{weather.rainPast3DaysMm.toFixed(1)}</p><p className="text-stone-500">mm past 3d</p></div>
+          </div>
+          <p className="mt-3 text-xs text-stone-500 dark:text-stone-400">
+            Compared with {weather.currentMonthBaseline.startYear}–{weather.currentMonthBaseline.endYear}: about {weather.currentMonthBaseline.averageMaxTemperatureC.toFixed(1)}°C average daily high, {weather.currentMonthBaseline.averageDailyRainMm.toFixed(1)} mm rain/day and {weather.currentMonthBaseline.averageDailyEt0Mm.toFixed(1)} mm ET₀/day this month.
+          </p>
+        </section>
+      )}
 
       {error && <div className="mb-5 rounded-2xl bg-red-50 px-4 py-3 text-sm text-red-700 dark:bg-red-400/10 dark:text-red-300">{error}</div>}
       {loading && <div className="rounded-3xl bg-stone-100 p-8 text-center text-sm text-stone-500 dark:bg-white/[0.045]">Loading plants...</div>}
