@@ -43,3 +43,11 @@ export interface PlantPayload {
   acquiredDate: string | null;
   notes: string | null;
 }
+
+export interface PlantAnalysis {
+  status: "healthy" | "watch" | "issue";
+  summary: string;
+  possibleIssues: string[];
+  suggestedActions: string[];
+  urgent: boolean;
+}
