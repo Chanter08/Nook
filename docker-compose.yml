@@ -17,6 +17,9 @@ services:
       Spoonacular__RapidApiHost: "${SPOONACULAR_RAPID_API_HOST}"
       OpenAI__ApiKey: "${OPENAI_API_KEY}"
       OpenAI__ReceiptModel: "gpt-5.4-mini"
+      OpenAI__PlantModel: "gpt-5.4-mini"
+    volumes:
+      - nook-plant-images:/app/wwwroot/images/plants
     depends_on:
       - nook-db
 
@@ -34,5 +37,6 @@ services:
 
 volumes:
   nook-sql:
+  nook-plant-images:
 
   
