@@ -11,6 +11,7 @@ using Nook.Api.Integrations.Recipes;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddHttpClient();
+builder.Services.AddMemoryCache();
 
 builder.Services.AddDbContext<NookDbContext>(options =>
     options.UseSqlServer(
@@ -26,6 +27,8 @@ builder.Services.AddScoped<PantryService>();
 builder.Services.AddScoped<RecipeCookingService>();
 builder.Services.AddScoped<ReceiptScannerService>();
 builder.Services.AddScoped<PlantAnalysisService>();
+builder.Services.AddScoped<MaltaWeatherService>();
+builder.Services.AddScoped<PlantCareAdviceService>();
 
 builder.Services.AddSingleton<FatSecretTokenService>();
 
