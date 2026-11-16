@@ -51,3 +51,46 @@ export interface PlantAnalysis {
   suggestedActions: string[];
   urgent: boolean;
 }
+
+
+export interface GardenWeatherDay {
+  date: string;
+  temperatureMaxC: number;
+  temperatureMinC: number;
+  rainMm: number;
+  rainProbabilityPercent: number;
+  et0Mm: number;
+  windMaxKmh: number;
+}
+
+export interface ClimateBaseline {
+  startYear: number;
+  endYear: number;
+  month: number;
+  averageMaxTemperatureC: number;
+  averageMinTemperatureC: number;
+  averageDailyRainMm: number;
+  averageDailyEt0Mm: number;
+}
+
+export interface GardenWeatherContext {
+  location: string;
+  baselineYears: number;
+  today: GardenWeatherDay;
+  rainPast3DaysMm: number;
+  rainNext48HoursMm: number;
+  rainNext7DaysMm: number;
+  currentMonthBaseline: ClimateBaseline;
+  forecast: GardenWeatherDay[];
+}
+
+export interface PlantCareAdvice {
+  action: "skip" | "check" | "monitor" | "water" | string;
+  title: string;
+  summary: string;
+  routineGuidance: string;
+  climateComparison: string;
+  reasons: string[];
+  daysSinceWatered: number | null;
+  weather: GardenWeatherContext;
+}
