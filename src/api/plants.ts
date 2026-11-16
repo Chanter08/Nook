@@ -1,5 +1,5 @@
 import { apiRequest } from "@/api/client";
-import type { PlantDetailResponse, PlantPayload, PlantSummary } from "@/types/plant";
+import type { PlantAnalysis, PlantDetailResponse, PlantPayload, PlantSummary } from "@/types/plant";
 
 export const getPlants = () => apiRequest<PlantSummary[]>("/api/plants");
 export const getPlant = (id: number) => apiRequest<PlantDetailResponse>(`/api/plants/${id}`);
@@ -27,3 +27,11 @@ export const addPlantCareEvent = (id: number, payload: { eventType: string; note
     method: "POST",
     body: JSON.stringify({ ...payload, occurredAtUtc: new Date().toISOString() }),
   });
+
+export function analyzePlantPhoto(image: File, plantName: string, species: string | null) {
+  const form = new FormData();
+  form.append("image", image);
+  form.append("plantName", plantName);
+  if (species) form.append("species", species);
+  return apiRequest<PlantAnalysis>("/api/plants/analyze", { method: "POST", body: form });
+}
