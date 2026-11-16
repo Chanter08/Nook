@@ -2,9 +2,9 @@ import { useEffect, useState } from "react";
 import { ArrowLeft, Camera, Droplets, Leaf, Plus } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import ThemeToggle from "@/components/ThemeToggle";
-import { addPlantCareEvent, addPlantObservation, getPlant } from "@/api/plants";
+import { addPlantCareEvent, addPlantObservation, analyzePlantPhoto, getPlant } from "@/api/plants";
 import { assetUrl } from "@/api/client";
-import type { PlantDetailResponse } from "@/types/plant";
+import type { PlantAnalysis, PlantDetailResponse } from "@/types/plant";
 
 const careTypes = ["Watered", "Fed", "Pruned", "Repotted", "Treated", "Moved", "Other"];
 
@@ -20,6 +20,8 @@ export default function PlantDetailPage() {
   const [careType, setCareType] = useState("Watered");
   const [careNotes, setCareNotes] = useState("");
   const [saving, setSaving] = useState(false);
+  const [analyzing, setAnalyzing] = useState(false);
+  const [analysis, setAnalysis] = useState<PlantAnalysis | null>(null);
 
   async function refresh() {
     try { setData(await getPlant(plantId)); setError(null); }
@@ -34,6 +36,20 @@ export default function PlantDetailPage() {
       setNotes(""); setIssueSummary(""); setImage(null); await refresh();
     } catch (e) { setError(e instanceof Error ? e.message : "Couldn't save observation."); }
     finally { setSaving(false); }
+  }
+
+  async function analyzePhoto() {
+    if (!image) return;
+    setAnalyzing(true);
+    try {
+      const result = await analyzePlantPhoto(image, plant.name, plant.species);
+      setAnalysis(result);
+      setIssueSummary(result.possibleIssues.join("; ") || result.summary);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Couldn't analyze plant photo.");
+    } finally {
+      setAnalyzing(false);
+    }
   }
 
   async function saveCare(event: React.FormEvent) {
@@ -69,7 +85,9 @@ export default function PlantDetailPage() {
           <p className="mt-1 text-xs text-stone-500">Add a photo and notes so you can compare how the plant changes over time.</p>
           <textarea value={notes} onChange={e=>setNotes(e.target.value)} placeholder="What changed? New growth, yellow leaves, pests..." className="mt-4 min-h-24 w-full rounded-2xl border border-stone-200 bg-stone-50 p-3 text-sm dark:border-white/10 dark:bg-white/5"/>
           <input value={issueSummary} onChange={e=>setIssueSummary(e.target.value)} placeholder="Possible issue (optional)" className="mt-2 h-11 w-full rounded-2xl border border-stone-200 bg-stone-50 px-3 text-sm dark:border-white/10 dark:bg-white/5"/>
-          <label className="mt-3 flex cursor-pointer items-center gap-2 rounded-2xl bg-stone-100 px-4 py-3 text-sm dark:bg-white/[0.06]"><Plus size={16}/>{image ? image.name : "Choose photo"}<input type="file" accept="image/*" onChange={e=>setImage(e.target.files?.[0] ?? null)} className="hidden"/></label>
+          <label className="mt-3 flex cursor-pointer items-center gap-2 rounded-2xl bg-stone-100 px-4 py-3 text-sm dark:bg-white/[0.06]"><Plus size={16}/>{image ? image.name : "Choose photo"}<input type="file" accept="image/jpeg,image/png,image/webp" onChange={e=>{setImage(e.target.files?.[0] ?? null); setAnalysis(null);}} className="hidden"/></label>
+          {image && <button type="button" onClick={() => void analyzePhoto()} disabled={analyzing} className="mt-2 w-full rounded-full border border-emerald-800 py-2.5 text-sm font-medium text-emerald-800 disabled:opacity-40 dark:border-emerald-500 dark:text-emerald-400">{analyzing ? "Checking photo..." : "Check plant health"}</button>}
+          {analysis && <div className={`mt-3 rounded-2xl p-3 text-sm ${analysis.status === "healthy" ? "bg-emerald-50 text-emerald-900 dark:bg-emerald-400/10 dark:text-emerald-200" : "bg-amber-50 text-amber-900 dark:bg-amber-400/10 dark:text-amber-200"}`}><p className="font-medium">{analysis.summary}</p>{analysis.suggestedActions.length > 0 && <ul className="mt-2 list-disc space-y-1 pl-5 text-xs">{analysis.suggestedActions.map(action => <li key={action}>{action}</li>)}</ul>}</div>}
           <button disabled={saving || (!notes.trim() && !image)} className="mt-3 w-full rounded-full bg-emerald-900 py-2.5 text-sm font-medium text-white disabled:opacity-40 dark:bg-emerald-700">Save progress</button>
         </form>
 
