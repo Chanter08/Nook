@@ -1,6 +1,7 @@
 using System.Data;
 using Microsoft.EntityFrameworkCore;
 using Nook.Api.Data;
+using Nook.Api.Services;
 
 namespace Nook.Api.Endpoints;
 
@@ -17,6 +18,7 @@ public static class PlantEndpoints
         group.MapDelete("/{id:int}", DeletePlant);
         group.MapPost("/{id:int}/observations", AddObservation).DisableAntiforgery();
         group.MapPost("/{id:int}/care", AddCareEvent);
+        group.MapPost("/analyze", AnalyzePhoto).DisableAntiforgery();
 
         return app;
     }
@@ -240,6 +242,31 @@ public static class PlantEndpoints
         }
 
         return Results.Created($"/api/plants/{id}", new { id = Convert.ToInt32(result), imageUrl });
+    }
+
+    private static async Task<IResult> AnalyzePhoto(HttpRequest request, PlantAnalysisService service, CancellationToken cancellationToken)
+    {
+        if (!request.HasFormContentType)
+            return Results.BadRequest(new { message = "Plant analysis requires an image upload." });
+
+        var form = await request.ReadFormAsync(cancellationToken);
+        var image = form.Files.GetFile("image");
+        if (image is null)
+            return Results.BadRequest(new { message = "Choose a plant photo first." });
+
+        try
+        {
+            var result = await service.AnalyzeAsync(
+                image,
+                form["plantName"].ToString(),
+                form["species"].ToString(),
+                cancellationToken);
+            return Results.Ok(result);
+        }
+        catch (PlantAnalysisException ex)
+        {
+            return Results.BadRequest(new { message = ex.Message });
+        }
     }
 
     private static async Task<IResult> AddCareEvent(int id, CareEventRequest request, NookDbContext db)
