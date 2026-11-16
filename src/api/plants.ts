@@ -1,5 +1,5 @@
 import { apiRequest } from "@/api/client";
-import type { PlantAnalysis, PlantDetailResponse, PlantPayload, PlantSummary } from "@/types/plant";
+import type { GardenWeatherContext, PlantAnalysis, PlantCareAdvice, PlantDetailResponse, PlantPayload, PlantSummary } from "@/types/plant";
 
 export const getPlants = () => apiRequest<PlantSummary[]>("/api/plants");
 export const getPlant = (id: number) => apiRequest<PlantDetailResponse>(`/api/plants/${id}`);
@@ -35,3 +35,9 @@ export function analyzePlantPhoto(image: File, plantName: string, species: strin
   if (species) form.append("species", species);
   return apiRequest<PlantAnalysis>("/api/plants/analyze", { method: "POST", body: form });
 }
+
+export const getGardenWeather = () =>
+  apiRequest<GardenWeatherContext>("/api/plants/weather");
+
+export const getPlantAdvice = (id: number) =>
+  apiRequest<PlantCareAdvice>(`/api/plants/${id}/advice`);
