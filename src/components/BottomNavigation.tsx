@@ -4,6 +4,7 @@ import {
   Utensils,
   Package,
   ShoppingCart,
+  Sprout,
 } from "lucide-react";
 
 import { NavLink } from "react-router-dom";
@@ -30,7 +31,7 @@ function BottomNavigation() {
     border-t
     border-stone-200
     bg-white/95
-    px-4
+    px-2
     pb-[calc(env(safe-area-inset-bottom)+0.75rem)]
     pt-3
     backdrop-blur
@@ -41,28 +42,32 @@ function BottomNavigation() {
     >
       <NavLink to="/" end className={navClass}>
         <Home size={21} />
-        <span className="text-xs font-medium">Home</span>
+        <span className="text-[11px] font-medium">Home</span>
       </NavLink>
 
       <NavLink to="/meals" className={navClass}>
         <Utensils size={21} />
-
-        <span className="text-xs font-medium">Meals</span>
+        <span className="text-[11px] font-medium">Meals</span>
       </NavLink>
 
       <NavLink to="/plans" className={navClass}>
         <CalendarDays size={21} />
-        <span className="text-xs font-medium">Plans</span>
+        <span className="text-[11px] font-medium">Plans</span>
       </NavLink>
 
       <NavLink to="/shopping" className={navClass}>
         <ShoppingCart size={21} />
-        <span className="text-xs font-medium">Shopping</span>
+        <span className="text-[11px] font-medium">Shopping</span>
       </NavLink>
 
       <NavLink to="/pantry" className={navClass}>
         <Package size={21} />
-        <span className="text-xs font-medium">Pantry</span>
+        <span className="text-[11px] font-medium">Pantry</span>
+      </NavLink>
+
+      <NavLink to="/plants" className={navClass}>
+        <Sprout size={21} />
+        <span className="text-[11px] font-medium">Plants</span>
       </NavLink>
     </nav>
   );
