@@ -25,6 +25,7 @@ builder.Services.AddScoped<CalendarService>();
 builder.Services.AddScoped<PantryService>();
 builder.Services.AddScoped<RecipeCookingService>();
 builder.Services.AddScoped<ReceiptScannerService>();
+builder.Services.AddScoped<PlantAnalysisService>();
 
 builder.Services.AddSingleton<FatSecretTokenService>();
 
@@ -188,7 +189,8 @@ app.MapMealPlanEndpoints();
 app.MapDiscoverEndpoints();
 app.MapChoreEndpoints();
 app.MapPantryEndpoints();
-app.MapCookingEndpoints();\napp.MapPlantEndpoints();
+app.MapCookingEndpoints();
+app.MapPlantEndpoints();
 
 app.MapGet("/health", async (NookDbContext db) =>
 {
