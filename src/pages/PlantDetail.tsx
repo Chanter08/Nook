@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
-import { ArrowLeft, Camera, Droplets, Leaf, Plus } from "lucide-react";
+import { ArrowLeft, Camera, CloudRain, Droplets, Leaf, Plus } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import ThemeToggle from "@/components/ThemeToggle";
-import { addPlantCareEvent, addPlantObservation, analyzePlantPhoto, getPlant } from "@/api/plants";
+import { addPlantCareEvent, addPlantObservation, analyzePlantPhoto, getPlant, getPlantAdvice } from "@/api/plants";
 import { assetUrl } from "@/api/client";
-import type { PlantAnalysis, PlantDetailResponse } from "@/types/plant";
+import type { PlantAnalysis, PlantCareAdvice, PlantDetailResponse } from "@/types/plant";
 
 const careTypes = ["Watered", "Fed", "Pruned", "Repotted", "Treated", "Moved", "Other"];
 
@@ -22,18 +22,24 @@ export default function PlantDetailPage() {
   const [saving, setSaving] = useState(false);
   const [analyzing, setAnalyzing] = useState(false);
   const [analysis, setAnalysis] = useState<PlantAnalysis | null>(null);
+  const [advice, setAdvice] = useState<PlantCareAdvice | null>(null);
 
   async function refresh() {
     try { setData(await getPlant(plantId)); setError(null); }
     catch (e) { setError(e instanceof Error ? e.message : "Couldn't load plant."); }
   }
-  useEffect(() => { if (Number.isFinite(plantId)) void refresh(); }, [plantId]);
+  async function refreshAdvice() {
+    try { setAdvice(await getPlantAdvice(plantId)); }
+    catch { setAdvice(null); }
+  }
+
+  useEffect(() => { if (Number.isFinite(plantId)) { void refresh(); void refreshAdvice(); } }, [plantId]);
 
   async function saveObservation(event: React.FormEvent) {
     event.preventDefault(); setSaving(true);
     try {
       await addPlantObservation(plantId, { notes, issueSummary, image });
-      setNotes(""); setIssueSummary(""); setImage(null); await refresh();
+      setNotes(""); setIssueSummary(""); setImage(null); await refresh(); await refreshAdvice();
     } catch (e) { setError(e instanceof Error ? e.message : "Couldn't save observation."); }
     finally { setSaving(false); }
   }
@@ -54,7 +60,7 @@ export default function PlantDetailPage() {
 
   async function saveCare(event: React.FormEvent) {
     event.preventDefault(); setSaving(true);
-    try { await addPlantCareEvent(plantId, { eventType: careType, notes: careNotes.trim() || null }); setCareNotes(""); await refresh(); }
+    try { await addPlantCareEvent(plantId, { eventType: careType, notes: careNotes.trim() || null }); setCareNotes(""); await refresh(); await refreshAdvice(); }
     catch (e) { setError(e instanceof Error ? e.message : "Couldn't save care event."); }
     finally { setSaving(false); }
   }
@@ -78,6 +84,22 @@ export default function PlantDetailPage() {
       </header>
 
       {error && <div className="mt-5 rounded-2xl bg-red-50 p-4 text-sm text-red-700">{error}</div>}
+
+      {advice && (
+        <section className={`mt-6 rounded-3xl p-5 ${advice.action === "skip" ? "bg-sky-50 dark:bg-sky-400/[0.07]" : "bg-emerald-50 dark:bg-emerald-400/[0.07]"}`}>
+          <div className="flex items-start gap-3">
+            <div className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/70 dark:bg-white/[0.07]"><CloudRain size={20} className="text-emerald-800 dark:text-emerald-300"/></div>
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wide text-emerald-800 dark:text-emerald-300">Today's care advice</p>
+              <h2 className="mt-1 text-xl font-semibold">{advice.title}</h2>
+              <p className="mt-2 text-sm text-stone-700 dark:text-stone-300">{advice.summary}</p>
+              <p className="mt-2 text-xs text-stone-500 dark:text-stone-400">{advice.climateComparison}</p>
+            </div>
+          </div>
+          {advice.reasons.length > 0 && <ul className="mt-4 list-disc space-y-1 pl-5 text-xs text-stone-600 dark:text-stone-400">{advice.reasons.map(reason => <li key={reason}>{reason}</li>)}</ul>}
+          <div className="mt-4 rounded-2xl bg-white/70 p-3 text-xs leading-relaxed text-stone-600 dark:bg-white/[0.05] dark:text-stone-300">{advice.routineGuidance}</div>
+        </section>
+      )}
 
       <section className="mt-6 grid gap-4 lg:grid-cols-2">
         <form onSubmit={saveObservation} className="rounded-3xl border border-stone-200 p-5 dark:border-white/[0.08]">
