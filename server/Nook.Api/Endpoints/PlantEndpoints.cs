@@ -12,7 +12,9 @@ public static class PlantEndpoints
         var group = app.MapGroup("/api/plants");
 
         group.MapGet("", GetPlants);
+        group.MapGet("/weather", GetGardenWeather);
         group.MapGet("/{id:int}", GetPlant);
+        group.MapGet("/{id:int}/advice", GetPlantAdvice);
         group.MapPost("", CreatePlant);
         group.MapPut("/{id:int}", UpdatePlant);
         group.MapDelete("/{id:int}", DeletePlant);
@@ -21,6 +23,67 @@ public static class PlantEndpoints
         group.MapPost("/analyze", AnalyzePhoto).DisableAntiforgery();
 
         return app;
+    }
+
+    private static async Task<IResult> GetGardenWeather(MaltaWeatherService weatherService, CancellationToken cancellationToken)
+    {
+        try
+        {
+            return Results.Ok(await weatherService.GetContextAsync(cancellationToken));
+        }
+        catch (Exception ex)
+        {
+            return Results.Problem($"Weather data is temporarily unavailable: {ex.Message}", statusCode: StatusCodes.Status503ServiceUnavailable);
+        }
+    }
+
+    private static async Task<IResult> GetPlantAdvice(
+        int id,
+        NookDbContext db,
+        MaltaWeatherService weatherService,
+        PlantCareAdviceService adviceService,
+        CancellationToken cancellationToken)
+    {
+        var connection = db.Database.GetDbConnection();
+        await db.Database.OpenConnectionAsync(cancellationToken);
+
+        await using var command = connection.CreateCommand();
+        command.CommandText = """
+            SELECT p.Name, p.Species, p.Location, p.Notes,
+                   (SELECT MAX(c.OccurredAtUtc) FROM PlantCareEvent c
+                    WHERE c.PlantId = p.PlantId AND c.EventType = 'Watered') AS LastWateredAtUtc,
+                   (SELECT TOP 1 o.Notes FROM PlantObservation o
+                    WHERE o.PlantId = p.PlantId ORDER BY o.ObservedAtUtc DESC, o.PlantObservationId DESC) AS LatestObservationNotes,
+                   (SELECT TOP 1 o.IssueSummary FROM PlantObservation o
+                    WHERE o.PlantId = p.PlantId ORDER BY o.ObservedAtUtc DESC, o.PlantObservationId DESC) AS LatestIssueSummary
+            FROM Plant p
+            WHERE p.PlantId = @id;
+            """;
+        AddParameter(command, "@id", id);
+
+        PlantAdviceInput plant;
+        await using (var reader = await command.ExecuteReaderAsync(cancellationToken))
+        {
+            if (!await reader.ReadAsync(cancellationToken)) return Results.NotFound();
+            plant = new PlantAdviceInput(
+                reader.GetString(0),
+                GetNullableString(reader, 1),
+                GetNullableString(reader, 2),
+                GetNullableString(reader, 3),
+                reader.IsDBNull(4) ? null : reader.GetDateTime(4),
+                GetNullableString(reader, 5),
+                GetNullableString(reader, 6));
+        }
+
+        try
+        {
+            var weather = await weatherService.GetContextAsync(cancellationToken);
+            return Results.Ok(adviceService.Build(plant, weather));
+        }
+        catch (Exception ex)
+        {
+            return Results.Problem($"Plant advice is temporarily unavailable: {ex.Message}", statusCode: StatusCodes.Status503ServiceUnavailable);
+        }
     }
 
     private static async Task<IResult> GetPlants(NookDbContext db)
