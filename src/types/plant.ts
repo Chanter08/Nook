@@ -44,7 +44,27 @@ export interface PlantPayload {
   notes: string | null;
 }
 
+export interface PlantIdentification {
+  commonName: string | null;
+  scientificName: string | null;
+  variety: string | null;
+  confidence: number;
+  alternatives: string[];
+  notes: string;
+}
+
+export interface PlantSituation {
+  setting: "outdoor" | "indoor" | "unclear";
+  growingIn: "pot" | "container" | "ground" | "unclear";
+  apparentLight: string;
+  soilSurface: string;
+  growthStage: string;
+  visibleCondition: string;
+}
+
 export interface PlantAnalysis {
+  identification: PlantIdentification;
+  situation: PlantSituation;
   status: "healthy" | "watch" | "issue";
   summary: string;
   possibleIssues: string[];
