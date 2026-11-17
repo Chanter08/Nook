@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { ArrowLeft, Camera, CloudRain, Droplets, Leaf, Plus } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import ThemeToggle from "@/components/ThemeToggle";
-import { addPlantCareEvent, addPlantObservation, analyzePlantPhoto, getPlant, getPlantAdvice } from "@/api/plants";
+import { addPlantCareEvent, addPlantObservation, analyzePlantPhoto, getPlant, getPlantAdvice, updatePlant } from "@/api/plants";
 import { assetUrl } from "@/api/client";
 import type { PlantAnalysis, PlantCareAdvice, PlantDetailResponse } from "@/types/plant";
 
@@ -23,6 +23,7 @@ export default function PlantDetailPage() {
   const [analyzing, setAnalyzing] = useState(false);
   const [analysis, setAnalysis] = useState<PlantAnalysis | null>(null);
   const [advice, setAdvice] = useState<PlantCareAdvice | null>(null);
+  const [applyingIdentification, setApplyingIdentification] = useState(false);
 
   async function refresh() {
     try { setData(await getPlant(plantId)); setError(null); }
@@ -55,6 +56,28 @@ export default function PlantDetailPage() {
       setError(e instanceof Error ? e.message : "Couldn't analyze plant photo.");
     } finally {
       setAnalyzing(false);
+    }
+  }
+
+  async function applyIdentification() {
+    if (!analysis) return;
+
+    setApplyingIdentification(true);
+    try {
+      await updatePlant(plantId, {
+        name: plant.name,
+        species: analysis.identification.scientificName ?? plant.species,
+        variety: analysis.identification.variety ?? plant.variety,
+        location: plant.location,
+        acquiredDate: plant.acquiredDate,
+        notes: plant.notes,
+      });
+      await refresh();
+      setError(null);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Couldn't apply identification.");
+    } finally {
+      setApplyingIdentification(false);
     }
   }
 
@@ -109,7 +132,74 @@ export default function PlantDetailPage() {
           <input value={issueSummary} onChange={e=>setIssueSummary(e.target.value)} placeholder="Possible issue (optional)" className="mt-2 h-11 w-full rounded-2xl border border-stone-200 bg-stone-50 px-3 text-sm dark:border-white/10 dark:bg-white/5"/>
           <label className="mt-3 flex cursor-pointer items-center gap-2 rounded-2xl bg-stone-100 px-4 py-3 text-sm dark:bg-white/[0.06]"><Plus size={16}/>{image ? image.name : "Choose photo"}<input type="file" accept="image/jpeg,image/png,image/webp" onChange={e=>{setImage(e.target.files?.[0] ?? null); setAnalysis(null);}} className="hidden"/></label>
           {image && <button type="button" onClick={() => void analyzePhoto()} disabled={analyzing} className="mt-2 w-full rounded-full border border-emerald-800 py-2.5 text-sm font-medium text-emerald-800 disabled:opacity-40 dark:border-emerald-500 dark:text-emerald-400">{analyzing ? "Checking photo..." : "Check plant health"}</button>}
-          {analysis && <div className={`mt-3 rounded-2xl p-3 text-sm ${analysis.status === "healthy" ? "bg-emerald-50 text-emerald-900 dark:bg-emerald-400/10 dark:text-emerald-200" : "bg-amber-50 text-amber-900 dark:bg-amber-400/10 dark:text-amber-200"}`}><p className="font-medium">{analysis.summary}</p>{analysis.suggestedActions.length > 0 && <ul className="mt-2 list-disc space-y-1 pl-5 text-xs">{analysis.suggestedActions.map(action => <li key={action}>{action}</li>)}</ul>}</div>}
+          {analysis && (
+            <div className={`mt-3 rounded-2xl p-4 text-sm ${analysis.status === "healthy" ? "bg-emerald-50 text-emerald-950 dark:bg-emerald-400/10 dark:text-emerald-100" : "bg-amber-50 text-amber-950 dark:bg-amber-400/10 dark:text-amber-100"}`}>
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wide opacity-70">Likely identification</p>
+                  <p className="mt-1 font-semibold">
+                    {analysis.identification.commonName ?? "Uncertain plant"}
+                    {analysis.identification.scientificName
+                      ? ` · ${analysis.identification.scientificName}`
+                      : ""}
+                  </p>
+                  <p className="mt-1 text-xs opacity-75">
+                    {Math.round(analysis.identification.confidence * 100)}% confidence
+                    {analysis.identification.variety
+                      ? ` · possible variety: ${analysis.identification.variety}`
+                      : ""}
+                  </p>
+                </div>
+                {analysis.identification.scientificName &&
+                  analysis.identification.scientificName !== plant.species && (
+                    <button
+                      type="button"
+                      onClick={() => void applyIdentification()}
+                      disabled={applyingIdentification}
+                      className="rounded-full bg-white/80 px-3 py-1.5 text-xs font-medium text-emerald-900 disabled:opacity-40 dark:bg-white/[0.08] dark:text-emerald-200"
+                    >
+                      {applyingIdentification ? "Applying..." : "Use identification"}
+                    </button>
+                  )}
+              </div>
+
+              {analysis.identification.alternatives.length > 0 && (
+                <p className="mt-2 text-xs opacity-70">
+                  Alternatives: {analysis.identification.alternatives.join(", ")}
+                </p>
+              )}
+
+              <div className="mt-3 rounded-xl bg-white/60 p-3 text-xs dark:bg-white/[0.05]">
+                <p className="font-semibold">Visible situation</p>
+                <p className="mt-1">
+                  {analysis.situation.setting} · {analysis.situation.growingIn} · {analysis.situation.apparentLight}
+                </p>
+                <p className="mt-1 opacity-80">Soil: {analysis.situation.soilSurface}</p>
+                <p className="mt-1 opacity-80">Growth: {analysis.situation.growthStage}</p>
+                <p className="mt-1 opacity-80">{analysis.situation.visibleCondition}</p>
+              </div>
+
+              <p className="mt-3 font-medium">{analysis.summary}</p>
+
+              {analysis.possibleIssues.length > 0 && (
+                <div className="mt-3">
+                  <p className="text-xs font-semibold">Possible issues</p>
+                  <ul className="mt-1 list-disc space-y-1 pl-5 text-xs">
+                    {analysis.possibleIssues.map(issue => <li key={issue}>{issue}</li>)}
+                  </ul>
+                </div>
+              )}
+
+              {analysis.suggestedActions.length > 0 && (
+                <div className="mt-3">
+                  <p className="text-xs font-semibold">What to do next</p>
+                  <ul className="mt-1 list-disc space-y-1 pl-5 text-xs">
+                    {analysis.suggestedActions.map(action => <li key={action}>{action}</li>)}
+                  </ul>
+                </div>
+              )}
+            </div>
+          )}
           <button disabled={saving || (!notes.trim() && !image)} className="mt-3 w-full rounded-full bg-emerald-900 py-2.5 text-sm font-medium text-white disabled:opacity-40 dark:bg-emerald-700">Save progress</button>
         </form>
 
