@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
-import { ArrowLeft, CloudRain, Leaf, Plus, Sprout, SunMedium, Trash2 } from "lucide-react";
+import { ArrowLeft, Camera, CloudRain, Leaf, Plus, Sprout, SunMedium, Trash2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import ThemeToggle from "@/components/ThemeToggle";
-import { createPlant, deletePlant, getGardenWeather, getPlants } from "@/api/plants";
+import { analyzePlantPhoto, createPlant, deletePlant, getGardenWeather, getPlants } from "@/api/plants";
 import { assetUrl } from "@/api/client";
-import type { GardenWeatherContext, PlantPayload, PlantSummary } from "@/types/plant";
+import type { GardenWeatherContext, PlantAnalysis, PlantPayload, PlantSummary } from "@/types/plant";
 
 const emptyPlant: PlantPayload = { name: "", species: "", variety: "", location: "", acquiredDate: null, notes: "" };
 
@@ -16,6 +16,9 @@ export default function PlantsPage() {
   const [form, setForm] = useState<PlantPayload>(emptyPlant);
   const [error, setError] = useState<string | null>(null);
   const [weather, setWeather] = useState<GardenWeatherContext | null>(null);
+  const [identifyImage, setIdentifyImage] = useState<File | null>(null);
+  const [identification, setIdentification] = useState<PlantAnalysis | null>(null);
+  const [identifying, setIdentifying] = useState(false);
 
   async function refresh() {
     try { setPlants(await getPlants()); setError(null); }
@@ -24,6 +27,38 @@ export default function PlantsPage() {
   }
 
   useEffect(() => { void refresh(); void getGardenWeather().then(setWeather).catch(() => setWeather(null)); }, []);
+
+  async function identifyPlant() {
+    if (!identifyImage) return;
+
+    setIdentifying(true);
+    try {
+      const result = await analyzePlantPhoto(
+        identifyImage,
+        form.name.trim(),
+        form.species?.trim() || null,
+      );
+
+      setIdentification(result);
+      setForm((current) => ({
+        ...current,
+        name: current.name.trim() || result.identification.commonName || "",
+        species:
+          current.species?.trim() ||
+          result.identification.scientificName ||
+          null,
+        variety:
+          current.variety?.trim() ||
+          result.identification.variety ||
+          null,
+      }));
+      setError(null);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Couldn't identify the plant.");
+    } finally {
+      setIdentifying(false);
+    }
+  }
 
   async function submit(event: React.FormEvent) {
     event.preventDefault();
@@ -37,6 +72,8 @@ export default function PlantsPage() {
       });
       setShowForm(false);
       setForm(emptyPlant);
+      setIdentifyImage(null);
+      setIdentification(null);
       navigate(`/plants/${result.id}`);
     } catch (e) { setError(e instanceof Error ? e.message : "Couldn't add plant."); }
   }
@@ -61,7 +98,7 @@ export default function PlantsPage() {
           <h1 className="mt-1 text-3xl font-semibold tracking-tight">Plants</h1>
           <p className="mt-1 text-sm text-stone-500 dark:text-stone-400">Keep a photo history and remember how each plant has been cared for.</p>
         </div>
-        <button onClick={() => setShowForm(true)} className="flex h-11 shrink-0 items-center gap-2 rounded-full bg-emerald-900 px-4 text-sm font-medium text-white dark:bg-emerald-700"><Plus size={17}/>Add plant</button>
+        <button onClick={() => { setShowForm(true); setIdentifyImage(null); setIdentification(null); }} className="flex h-11 shrink-0 items-center gap-2 rounded-full bg-emerald-900 px-4 text-sm font-medium text-white dark:bg-emerald-700"><Plus size={17}/>Add plant</button>
       </header>
 
       {weather && (
@@ -88,7 +125,7 @@ export default function PlantsPage() {
       {loading && <div className="rounded-3xl bg-stone-100 p-8 text-center text-sm text-stone-500 dark:bg-white/[0.045]">Loading plants...</div>}
 
       {!loading && plants.length === 0 && (
-        <button onClick={() => setShowForm(true)} className="w-full rounded-3xl bg-emerald-50 px-6 py-12 text-center dark:bg-emerald-400/[0.06]">
+        <button onClick={() => { setShowForm(true); setIdentifyImage(null); setIdentification(null); }} className="w-full rounded-3xl bg-emerald-50 px-6 py-12 text-center dark:bg-emerald-400/[0.06]">
           <Sprout size={34} className="mx-auto text-emerald-700"/>
           <p className="mt-4 font-medium">Add your first plant</p>
           <p className="mt-1 text-sm text-stone-500">Start with one of the citrus plants or herbs and build its history from today.</p>
@@ -121,6 +158,62 @@ export default function PlantsPage() {
         <div className="fixed inset-0 z-[70] flex items-end bg-black/40 p-3 sm:items-center sm:justify-center" onMouseDown={() => setShowForm(false)}>
           <form onSubmit={submit} onMouseDown={(e) => e.stopPropagation()} className="w-full max-w-lg rounded-[2rem] bg-white p-6 shadow-2xl dark:bg-stone-900">
             <h2 className="text-xl font-semibold">Add plant</h2>
+
+            <div className="mt-5 rounded-3xl bg-emerald-50 p-4 dark:bg-emerald-400/[0.06]">
+              <div className="flex items-center gap-2">
+                <Camera size={18} className="text-emerald-700 dark:text-emerald-400" />
+                <p className="text-sm font-medium">Identify from a photo</p>
+              </div>
+              <p className="mt-1 text-xs text-stone-500 dark:text-stone-400">
+                Nook can suggest the plant, scientific name and visible growing situation before you add it.
+              </p>
+              <label className="mt-3 flex cursor-pointer items-center gap-2 rounded-2xl bg-white px-4 py-3 text-sm dark:bg-white/[0.06]">
+                <Plus size={16} />
+                {identifyImage ? identifyImage.name : "Choose plant photo"}
+                <input
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  className="hidden"
+                  onChange={(e) => {
+                    setIdentifyImage(e.target.files?.[0] ?? null);
+                    setIdentification(null);
+                  }}
+                />
+              </label>
+              {identifyImage && (
+                <button
+                  type="button"
+                  onClick={() => void identifyPlant()}
+                  disabled={identifying}
+                  className="mt-2 w-full rounded-full border border-emerald-800 py-2.5 text-sm font-medium text-emerald-800 disabled:opacity-40 dark:border-emerald-500 dark:text-emerald-300"
+                >
+                  {identifying ? "Identifying..." : "Identify plant & situation"}
+                </button>
+              )}
+              {identification && (
+                <div className="mt-3 rounded-2xl bg-white/80 p-3 text-xs dark:bg-white/[0.05]">
+                  <p className="font-semibold text-stone-900 dark:text-stone-100">
+                    {identification.identification.commonName ?? "Plant uncertain"}
+                    {identification.identification.scientificName
+                      ? ` · ${identification.identification.scientificName}`
+                      : ""}
+                  </p>
+                  <p className="mt-1 text-stone-500 dark:text-stone-400">
+                    {Math.round(identification.identification.confidence * 100)}% confidence
+                    {identification.identification.variety
+                      ? ` · likely ${identification.identification.variety}`
+                      : ""}
+                  </p>
+                  <p className="mt-2 text-stone-600 dark:text-stone-300">
+                    {identification.situation.setting} · {identification.situation.growingIn} · {identification.situation.apparentLight}
+                  </p>
+                  <p className="mt-1 text-stone-500 dark:text-stone-400">
+                    {identification.situation.visibleCondition}
+                  </p>
+                </div>
+              )}
+            </div>
+
             <div className="mt-5 grid gap-3 sm:grid-cols-2">
               <input required placeholder="Name *" value={form.name} onChange={e => setForm({...form,name:e.target.value})} className="h-12 rounded-2xl border border-stone-200 bg-stone-50 px-4 dark:border-white/10 dark:bg-white/5"/>
               <input placeholder="Species" value={form.species ?? ""} onChange={e => setForm({...form,species:e.target.value})} className="h-12 rounded-2xl border border-stone-200 bg-stone-50 px-4 dark:border-white/10 dark:bg-white/5"/>
@@ -129,7 +222,7 @@ export default function PlantsPage() {
               <input type="date" value={form.acquiredDate ?? ""} onChange={e => setForm({...form,acquiredDate:e.target.value || null})} className="h-12 rounded-2xl border border-stone-200 bg-stone-50 px-4 dark:border-white/10 dark:bg-white/5 sm:col-span-2"/>
               <textarea placeholder="Notes" value={form.notes ?? ""} onChange={e => setForm({...form,notes:e.target.value})} className="min-h-24 rounded-2xl border border-stone-200 bg-stone-50 p-4 dark:border-white/10 dark:bg-white/5 sm:col-span-2"/>
             </div>
-            <div className="mt-5 flex justify-end gap-2"><button type="button" onClick={() => setShowForm(false)} className="rounded-full px-4 py-2.5 text-sm">Cancel</button><button className="rounded-full bg-emerald-900 px-5 py-2.5 text-sm font-medium text-white dark:bg-emerald-700">Add plant</button></div>
+            <div className="mt-5 flex justify-end gap-2"><button type="button" onClick={() => { setShowForm(false); setIdentifyImage(null); setIdentification(null); }} className="rounded-full px-4 py-2.5 text-sm">Cancel</button><button className="rounded-full bg-emerald-900 px-5 py-2.5 text-sm font-medium text-white dark:bg-emerald-700">Add plant</button></div>
           </form>
         </div>
       )}
