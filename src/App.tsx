@@ -11,6 +11,8 @@ import UsPage from "@/pages/Us";
 import DiscoverPage from "@/pages/Discover";
 import DiscoverRecipePage from "@/pages/DiscoverRecipe";
 import PantryPage from "@/pages/Pantry";
+import PlantsPage from "@/pages/Plants";
+import PlantDetailPage from "@/pages/PlantDetail";
 
 function App() {
   return (
@@ -23,10 +25,11 @@ function App() {
           <Route path="/meals/:id" element={<RecipePage />} />
           <Route path="/shopping" element={<ShoppingPage />} />
           <Route path="/pantry" element={<PantryPage />} />
+          <Route path="/plants" element={<PlantsPage />} />
+          <Route path="/plants/:id" element={<PlantDetailPage />} />
           <Route path="/discover" element={<DiscoverPage />} />
           <Route path="/discover/:externalId" element={<DiscoverRecipePage />} />
           <Route path="/meals/new" element={<AddRecipePage />} />
-          
           <Route path="/us" element={<UsPage />} />
         </Routes>
         <BottomNavigation />

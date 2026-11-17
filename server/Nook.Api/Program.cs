@@ -11,6 +11,7 @@ using Nook.Api.Integrations.Recipes;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddHttpClient();
+builder.Services.AddMemoryCache();
 
 builder.Services.AddDbContext<NookDbContext>(options =>
     options.UseSqlServer(
@@ -25,6 +26,9 @@ builder.Services.AddScoped<CalendarService>();
 builder.Services.AddScoped<PantryService>();
 builder.Services.AddScoped<RecipeCookingService>();
 builder.Services.AddScoped<ReceiptScannerService>();
+builder.Services.AddScoped<PlantAnalysisService>();
+builder.Services.AddScoped<MaltaWeatherService>();
+builder.Services.AddScoped<PlantCareAdviceService>();
 
 builder.Services.AddSingleton<FatSecretTokenService>();
 
@@ -189,6 +193,7 @@ app.MapDiscoverEndpoints();
 app.MapChoreEndpoints();
 app.MapPantryEndpoints();
 app.MapCookingEndpoints();
+app.MapPlantEndpoints();
 
 app.MapGet("/health", async (NookDbContext db) =>
 {
