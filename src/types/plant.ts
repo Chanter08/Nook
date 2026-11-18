@@ -6,6 +6,9 @@ export interface PlantSummary {
   location: string | null;
   acquiredDate: string | null;
   notes: string | null;
+  growingIn: "pot" | "ground" | null;
+  rainExposure: "exposed" | "sheltered" | "indoor" | null;
+  sunExposure: "full" | "partial" | "shade" | null;
   coverImageUrl: string | null;
   createdAtUtc: string;
   lastObservedAtUtc: string | null;
@@ -42,6 +45,9 @@ export interface PlantPayload {
   location: string | null;
   acquiredDate: string | null;
   notes: string | null;
+  growingIn: "pot" | "ground" | null;
+  rainExposure: "exposed" | "sheltered" | "indoor" | null;
+  sunExposure: "full" | "partial" | "shade" | null;
 }
 
 export interface PlantIdentification {
@@ -113,4 +119,7 @@ export interface PlantCareAdvice {
   reasons: string[];
   daysSinceWatered: number | null;
   weather: GardenWeatherContext;
+  careGroup: string;
+  quickChecks: string[];
+  missingProfileInfo: string[];
 }

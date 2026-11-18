@@ -2,9 +2,10 @@ import { useEffect, useState } from "react";
 import { ArrowLeft, Camera, CloudRain, Droplets, Leaf, Plus } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import ThemeToggle from "@/components/ThemeToggle";
+import PlantGrowingConditions from "@/components/PlantGrowingConditions";
 import { addPlantCareEvent, addPlantObservation, analyzePlantPhoto, getPlant, getPlantAdvice, updatePlant } from "@/api/plants";
 import { assetUrl } from "@/api/client";
-import type { PlantAnalysis, PlantCareAdvice, PlantDetailResponse } from "@/types/plant";
+import type { PlantAnalysis, PlantCareAdvice, PlantDetailResponse, PlantPayload } from "@/types/plant";
 
 const careTypes = ["Watered", "Fed", "Pruned", "Repotted", "Treated", "Moved", "Other"];
 
@@ -24,6 +25,9 @@ export default function PlantDetailPage() {
   const [analysis, setAnalysis] = useState<PlantAnalysis | null>(null);
   const [advice, setAdvice] = useState<PlantCareAdvice | null>(null);
   const [applyingIdentification, setApplyingIdentification] = useState(false);
+  const [editingProfile, setEditingProfile] = useState(false);
+  const [profileForm, setProfileForm] = useState<PlantPayload | null>(null);
+  const [savingProfile, setSavingProfile] = useState(false);
 
   async function refresh() {
     try { setData(await getPlant(plantId)); setError(null); }
@@ -71,6 +75,9 @@ export default function PlantDetailPage() {
         location: plant.location,
         acquiredDate: plant.acquiredDate,
         notes: plant.notes,
+        growingIn: plant.growingIn,
+        rainExposure: plant.rainExposure,
+        sunExposure: plant.sunExposure,
       });
       await refresh();
       setError(null);
@@ -78,6 +85,40 @@ export default function PlantDetailPage() {
       setError(e instanceof Error ? e.message : "Couldn't apply identification.");
     } finally {
       setApplyingIdentification(false);
+    }
+  }
+
+  function openProfileEditor() {
+    if (!data) return;
+    const plant = data.plant;
+    setProfileForm({
+      name: plant.name,
+      species: plant.species,
+      variety: plant.variety,
+      location: plant.location,
+      acquiredDate: plant.acquiredDate,
+      notes: plant.notes,
+      growingIn: plant.growingIn,
+      rainExposure: plant.rainExposure,
+      sunExposure: plant.sunExposure,
+    });
+    setEditingProfile(true);
+  }
+
+  async function saveProfile(event: React.FormEvent) {
+    event.preventDefault();
+    if (!profileForm || savingProfile) return;
+    setSavingProfile(true);
+    try {
+      await updatePlant(plantId, profileForm);
+      setEditingProfile(false);
+      setProfileForm(null);
+      await refresh();
+      await refreshAdvice();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Couldn't update plant details.");
+    } finally {
+      setSavingProfile(false);
     }
   }
 
@@ -106,7 +147,38 @@ export default function PlantDetailPage() {
         </div>
       </header>
 
+      <button type="button" onClick={openProfileEditor} className="mt-3 rounded-full border border-emerald-800 px-4 py-2 text-sm font-medium text-emerald-900 dark:border-emerald-500 dark:text-emerald-300">
+        Edit plant profile & growing conditions
+      </button>
       {error && <div className="mt-5 rounded-2xl bg-red-50 p-4 text-sm text-red-700">{error}</div>}
+
+      {editingProfile && profileForm && (
+        <div className="fixed inset-0 z-[70] flex items-end bg-black/40 p-3 sm:items-center sm:justify-center" onMouseDown={() => { if (!savingProfile) setEditingProfile(false); }}>
+          <form
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="edit-plant-profile-title"
+            onSubmit={saveProfile}
+            onMouseDown={(event) => event.stopPropagation()}
+            className="max-h-[90dvh] w-full max-w-lg overflow-y-auto rounded-[2rem] bg-white p-6 shadow-2xl dark:bg-stone-900"
+          >
+            <h2 id="edit-plant-profile-title" className="text-xl font-semibold">Edit plant profile</h2>
+            <p className="mt-1 text-sm text-stone-500">Better growing conditions mean more useful recommendations.</p>
+            <div className="mt-5 grid gap-3 sm:grid-cols-2">
+              <input required aria-label="Plant name" value={profileForm.name} onChange={(e) => setProfileForm({ ...profileForm, name: e.target.value })} placeholder="Name" className="h-12 rounded-2xl border border-stone-200 bg-stone-50 px-4 dark:border-white/10 dark:bg-white/5" />
+              <input aria-label="Species" value={profileForm.species ?? ""} onChange={(e) => setProfileForm({ ...profileForm, species: e.target.value || null })} placeholder="Species" className="h-12 rounded-2xl border border-stone-200 bg-stone-50 px-4 dark:border-white/10 dark:bg-white/5" />
+              <input aria-label="Variety" value={profileForm.variety ?? ""} onChange={(e) => setProfileForm({ ...profileForm, variety: e.target.value || null })} placeholder="Variety" className="h-12 rounded-2xl border border-stone-200 bg-stone-50 px-4 dark:border-white/10 dark:bg-white/5" />
+              <input aria-label="Location" value={profileForm.location ?? ""} onChange={(e) => setProfileForm({ ...profileForm, location: e.target.value || null })} placeholder="Location" className="h-12 rounded-2xl border border-stone-200 bg-stone-50 px-4 dark:border-white/10 dark:bg-white/5" />
+              <textarea aria-label="Plant notes" value={profileForm.notes ?? ""} onChange={(e) => setProfileForm({ ...profileForm, notes: e.target.value || null })} placeholder="Notes" className="min-h-20 rounded-2xl border border-stone-200 bg-stone-50 p-3 dark:border-white/10 dark:bg-white/5 sm:col-span-2" />
+            </div>
+            <PlantGrowingConditions value={profileForm} onChange={(patch) => setProfileForm((current) => current ? { ...current, ...patch } : null)} disabled={savingProfile} />
+            <div className="mt-5 flex justify-end gap-2">
+              <button type="button" disabled={savingProfile} onClick={() => setEditingProfile(false)} className="rounded-full px-4 py-2.5 text-sm">Cancel</button>
+              <button disabled={savingProfile} className="rounded-full bg-emerald-900 px-5 py-2.5 text-sm font-medium text-white disabled:opacity-40 dark:bg-emerald-700">{savingProfile ? "Saving..." : "Save changes"}</button>
+            </div>
+          </form>
+        </div>
+      )}
 
       {advice && (
         <section className={`mt-6 rounded-3xl p-5 ${advice.action === "skip" ? "bg-sky-50 dark:bg-sky-400/[0.07]" : "bg-emerald-50 dark:bg-emerald-400/[0.07]"}`}>
@@ -120,7 +192,23 @@ export default function PlantDetailPage() {
             </div>
           </div>
           {advice.reasons.length > 0 && <ul className="mt-4 list-disc space-y-1 pl-5 text-xs text-stone-600 dark:text-stone-400">{advice.reasons.map(reason => <li key={reason}>{reason}</li>)}</ul>}
-          <div className="mt-4 rounded-2xl bg-white/70 p-3 text-xs leading-relaxed text-stone-600 dark:bg-white/[0.05] dark:text-stone-300">{advice.routineGuidance}</div>
+          <div className="mt-4 rounded-2xl bg-white/70 p-3 text-xs leading-relaxed text-stone-600 dark:bg-white/[0.05] dark:text-stone-300">
+            <p className="mb-1 font-semibold">Care guidance · {advice.careGroup}</p>
+            {advice.routineGuidance}
+          </div>
+          {advice.quickChecks.length > 0 && (
+            <div className="mt-4">
+              <h3 className="text-sm font-semibold">What to check next</h3>
+              <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-stone-700 dark:text-stone-300">
+                {advice.quickChecks.map((check) => <li key={check}>{check}</li>)}
+              </ul>
+            </div>
+          )}
+          {advice.missingProfileInfo.length > 0 && (
+            <button type="button" onClick={openProfileEditor} className="mt-4 w-full rounded-2xl border border-emerald-800 p-3 text-left text-xs text-emerald-950 dark:border-emerald-600 dark:text-emerald-200">
+              <strong>Improve this advice:</strong> Set {advice.missingProfileInfo.join(", ").toLowerCase()} in this plant's profile.
+            </button>
+          )}
         </section>
       )}
 

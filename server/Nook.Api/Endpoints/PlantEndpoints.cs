@@ -56,7 +56,8 @@ public static class PlantEndpoints
                    (SELECT TOP 1 o.Notes FROM PlantObservation o
                     WHERE o.PlantId = p.PlantId ORDER BY o.ObservedAtUtc DESC, o.PlantObservationId DESC) AS LatestObservationNotes,
                    (SELECT TOP 1 o.IssueSummary FROM PlantObservation o
-                    WHERE o.PlantId = p.PlantId ORDER BY o.ObservedAtUtc DESC, o.PlantObservationId DESC) AS LatestIssueSummary
+                    WHERE o.PlantId = p.PlantId ORDER BY o.ObservedAtUtc DESC, o.PlantObservationId DESC) AS LatestIssueSummary,
+                   p.GrowingIn, p.RainExposure, p.SunExposure
             FROM Plant p
             WHERE p.PlantId = @id;
             """;
@@ -73,7 +74,10 @@ public static class PlantEndpoints
                 GetNullableString(reader, 3),
                 reader.IsDBNull(4) ? null : reader.GetDateTime(4),
                 GetNullableString(reader, 5),
-                GetNullableString(reader, 6));
+                GetNullableString(reader, 6),
+                GetNullableString(reader, 7),
+                GetNullableString(reader, 8),
+                GetNullableString(reader, 9));
         }
 
         try
@@ -98,7 +102,8 @@ public static class PlantEndpoints
             SELECT p.PlantId, p.Name, p.Species, p.Variety, p.Location, p.AcquiredDate,
                    p.Notes, p.CoverImageUrl, p.CreatedAtUtc,
                    (SELECT MAX(o.ObservedAtUtc) FROM PlantObservation o WHERE o.PlantId = p.PlantId) AS LastObservedAtUtc,
-                   (SELECT MAX(c.OccurredAtUtc) FROM PlantCareEvent c WHERE c.PlantId = p.PlantId AND c.EventType = 'Watered') AS LastWateredAtUtc
+                   (SELECT MAX(c.OccurredAtUtc) FROM PlantCareEvent c WHERE c.PlantId = p.PlantId AND c.EventType = 'Watered') AS LastWateredAtUtc,
+                   p.GrowingIn, p.RainExposure, p.SunExposure
             FROM Plant p
             ORDER BY p.Name;
             """;
@@ -121,7 +126,8 @@ public static class PlantEndpoints
         await using (var command = connection.CreateCommand())
         {
             command.CommandText = """
-                SELECT PlantId, Name, Species, Variety, Location, AcquiredDate, Notes, CoverImageUrl, CreatedAtUtc
+                SELECT PlantId, Name, Species, Variety, Location, AcquiredDate, Notes, CoverImageUrl, CreatedAtUtc,
+                       GrowingIn, RainExposure, SunExposure
                 FROM Plant WHERE PlantId = @id;
                 """;
             AddParameter(command, "@id", id);
@@ -138,7 +144,10 @@ public static class PlantEndpoints
                 acquiredDate = GetNullableDateOnly(reader, 5),
                 notes = GetNullableString(reader, 6),
                 coverImageUrl = GetNullableString(reader, 7),
-                createdAtUtc = reader.GetDateTime(8)
+                createdAtUtc = reader.GetDateTime(8),
+                growingIn = GetNullableString(reader, 9),
+                rainExposure = GetNullableString(reader, 10),
+                sunExposure = GetNullableString(reader, 11)
             };
         }
 
@@ -195,13 +204,18 @@ public static class PlantEndpoints
         if (string.IsNullOrWhiteSpace(request.Name))
             return Results.BadRequest(new { message = "Plant name is required." });
 
+        if (!IsValidCondition(request.GrowingIn, "pot", "ground") ||
+            !IsValidCondition(request.RainExposure, "exposed", "sheltered", "indoor") ||
+            !IsValidCondition(request.SunExposure, "full", "partial", "shade"))
+            return Results.BadRequest(new { message = "Choose valid growing, rain and sunlight conditions." });
+
         var connection = db.Database.GetDbConnection();
         await db.Database.OpenConnectionAsync();
         await using var command = connection.CreateCommand();
         command.CommandText = """
-            INSERT INTO Plant (Name, Species, Variety, Location, AcquiredDate, Notes, CreatedAtUtc)
+            INSERT INTO Plant (Name, Species, Variety, Location, AcquiredDate, Notes, GrowingIn, RainExposure, SunExposure, CreatedAtUtc)
             OUTPUT INSERTED.PlantId
-            VALUES (@name, @species, @variety, @location, @acquiredDate, @notes, SYSUTCDATETIME());
+            VALUES (@name, @species, @variety, @location, @acquiredDate, @notes, @growingIn, @rainExposure, @sunExposure, SYSUTCDATETIME());
             """;
         AddParameter(command, "@name", request.Name.Trim());
         AddParameter(command, "@species", request.Species);
@@ -209,6 +223,9 @@ public static class PlantEndpoints
         AddParameter(command, "@location", request.Location);
         AddParameter(command, "@acquiredDate", request.AcquiredDate);
         AddParameter(command, "@notes", request.Notes);
+        AddParameter(command, "@growingIn", request.GrowingIn);
+        AddParameter(command, "@rainExposure", request.RainExposure);
+        AddParameter(command, "@sunExposure", request.SunExposure);
         var id = Convert.ToInt32(await command.ExecuteScalarAsync());
         return Results.Created($"/api/plants/{id}", new { id });
     }
@@ -218,12 +235,18 @@ public static class PlantEndpoints
         if (string.IsNullOrWhiteSpace(request.Name))
             return Results.BadRequest(new { message = "Plant name is required." });
 
+        if (!IsValidCondition(request.GrowingIn, "pot", "ground") ||
+            !IsValidCondition(request.RainExposure, "exposed", "sheltered", "indoor") ||
+            !IsValidCondition(request.SunExposure, "full", "partial", "shade"))
+            return Results.BadRequest(new { message = "Choose valid growing, rain and sunlight conditions." });
+
         var connection = db.Database.GetDbConnection();
         await db.Database.OpenConnectionAsync();
         await using var command = connection.CreateCommand();
         command.CommandText = """
             UPDATE Plant SET Name=@name, Species=@species, Variety=@variety, Location=@location,
-                AcquiredDate=@acquiredDate, Notes=@notes
+                AcquiredDate=@acquiredDate, Notes=@notes, GrowingIn=@growingIn,
+                RainExposure=@rainExposure, SunExposure=@sunExposure
             WHERE PlantId=@id;
             """;
         AddParameter(command, "@id", id);
@@ -233,6 +256,9 @@ public static class PlantEndpoints
         AddParameter(command, "@location", request.Location);
         AddParameter(command, "@acquiredDate", request.AcquiredDate);
         AddParameter(command, "@notes", request.Notes);
+        AddParameter(command, "@growingIn", request.GrowingIn);
+        AddParameter(command, "@rainExposure", request.RainExposure);
+        AddParameter(command, "@sunExposure", request.SunExposure);
         return await command.ExecuteNonQueryAsync() == 0 ? Results.NotFound() : Results.NoContent();
     }
 
@@ -417,7 +443,10 @@ public static class PlantEndpoints
         coverImageUrl = GetNullableString(reader, 7),
         createdAtUtc = reader.GetDateTime(8),
         lastObservedAtUtc = reader.IsDBNull(9) ? (DateTime?)null : reader.GetDateTime(9),
-        lastWateredAtUtc = reader.IsDBNull(10) ? (DateTime?)null : reader.GetDateTime(10)
+        lastWateredAtUtc = reader.IsDBNull(10) ? (DateTime?)null : reader.GetDateTime(10),
+        growingIn = GetNullableString(reader, 11),
+        rainExposure = GetNullableString(reader, 12),
+        sunExposure = GetNullableString(reader, 13)
     };
 
     private static string? GetNullableString(IDataRecord reader, int index) =>
@@ -425,6 +454,9 @@ public static class PlantEndpoints
 
     private static DateOnly? GetNullableDateOnly(IDataRecord reader, int index) =>
         reader.IsDBNull(index) ? null : DateOnly.FromDateTime(reader.GetDateTime(index));
+
+    private static bool IsValidCondition(string? value, params string[] allowed) =>
+        value is null || allowed.Contains(value, StringComparer.OrdinalIgnoreCase);
 
     private static void AddParameter(System.Data.Common.DbCommand command, string name, object? value)
     {
@@ -434,7 +466,9 @@ public static class PlantEndpoints
         command.Parameters.Add(parameter);
     }
 
-    public sealed record PlantRequest(string Name, string? Species, string? Variety, string? Location, DateOnly? AcquiredDate, string? Notes);
+    public sealed record PlantRequest(
+        string Name, string? Species, string? Variety, string? Location, DateOnly? AcquiredDate, string? Notes,
+        string? GrowingIn, string? RainExposure, string? SunExposure);
     public sealed record CareEventRequest(string EventType, DateTime? OccurredAtUtc, string? Notes);
     public sealed record BulkCareEventRequest(List<int>? PlantIds, string EventType, DateTime? OccurredAtUtc, string? Notes);
 }
