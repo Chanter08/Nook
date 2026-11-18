@@ -2,11 +2,12 @@ import { useEffect, useState } from "react";
 import { ArrowLeft, Camera, ClipboardList, CloudRain, Leaf, Plus, Sprout, SunMedium, Trash2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import ThemeToggle from "@/components/ThemeToggle";
+import PlantGrowingConditions from "@/components/PlantGrowingConditions";
 import { addBulkPlantCareEvent, analyzePlantPhoto, createPlant, deletePlant, getGardenWeather, getPlants } from "@/api/plants";
 import { assetUrl } from "@/api/client";
 import type { GardenWeatherContext, PlantAnalysis, PlantPayload, PlantSummary } from "@/types/plant";
 
-const emptyPlant: PlantPayload = { name: "", species: "", variety: "", location: "", acquiredDate: null, notes: "" };
+const emptyPlant: PlantPayload = { name: "", species: "", variety: "", location: "", acquiredDate: null, notes: "", growingIn: null, rainExposure: null, sunExposure: null };
 const careTypes = ["Watered", "Fed", "Pruned", "Repotted", "Treated", "Moved", "Other"];
 
 function localDateTimeValue(date: Date) {
@@ -301,7 +302,7 @@ export default function PlantsPage() {
 
       {showForm && (
         <div className="fixed inset-0 z-[70] flex items-end bg-black/40 p-3 sm:items-center sm:justify-center" onMouseDown={() => setShowForm(false)}>
-          <form onSubmit={submit} onMouseDown={(e) => e.stopPropagation()} className="w-full max-w-lg rounded-[2rem] bg-white p-6 shadow-2xl dark:bg-stone-900">
+          <form onSubmit={submit} onMouseDown={(e) => e.stopPropagation()} className="max-h-[90dvh] w-full max-w-lg overflow-y-auto rounded-[2rem] bg-white p-6 shadow-2xl dark:bg-stone-900">
             <h2 className="text-xl font-semibold">Add plant</h2>
 
             <div className="mt-5 rounded-3xl bg-emerald-50 p-4 dark:bg-emerald-400/[0.06]">
@@ -367,6 +368,7 @@ export default function PlantsPage() {
               <input type="date" value={form.acquiredDate ?? ""} onChange={e => setForm({...form,acquiredDate:e.target.value || null})} className="h-12 rounded-2xl border border-stone-200 bg-stone-50 px-4 dark:border-white/10 dark:bg-white/5 sm:col-span-2"/>
               <textarea placeholder="Notes" value={form.notes ?? ""} onChange={e => setForm({...form,notes:e.target.value})} className="min-h-24 rounded-2xl border border-stone-200 bg-stone-50 p-4 dark:border-white/10 dark:bg-white/5 sm:col-span-2"/>
             </div>
+            <PlantGrowingConditions value={form} onChange={(patch) => setForm((current) => ({ ...current, ...patch }))} />
             <div className="mt-5 flex justify-end gap-2"><button type="button" onClick={() => { setShowForm(false); setIdentifyImage(null); setIdentification(null); }} className="rounded-full px-4 py-2.5 text-sm">Cancel</button><button className="rounded-full bg-emerald-900 px-5 py-2.5 text-sm font-medium text-white dark:bg-emerald-700">Add plant</button></div>
           </form>
         </div>
