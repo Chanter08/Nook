@@ -381,9 +381,6 @@ public static class PlantEndpoints
         AddParameter(command, "@eventType", eventType);
         AddParameter(command, "@occurredAt", occurredAt);
         AddParameter(command, "@notes", request.Notes);
-        AddParameter(command, "@growingIn", request.GrowingIn);
-        AddParameter(command, "@rainExposure", request.RainExposure);
-        AddParameter(command, "@sunExposure", request.SunExposure);
         var result = await command.ExecuteScalarAsync();
         return result is null ? Results.NotFound() : Results.Created($"/api/plants/{id}", new { id = Convert.ToInt32(result) });
     }
