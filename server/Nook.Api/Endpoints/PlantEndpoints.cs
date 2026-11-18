@@ -20,6 +20,7 @@ public static class PlantEndpoints
         group.MapDelete("/{id:int}", DeletePlant);
         group.MapPost("/{id:int}/observations", AddObservation).DisableAntiforgery();
         group.MapPost("/{id:int}/care", AddCareEvent);
+        group.MapPost("/care/bulk", AddBulkCareEvent);
         group.MapPost("/analyze", AnalyzePhoto).DisableAntiforgery();
 
         return app;
@@ -358,6 +359,52 @@ public static class PlantEndpoints
         return result is null ? Results.NotFound() : Results.Created($"/api/plants/{id}", new { id = Convert.ToInt32(result) });
     }
 
+    private static async Task<IResult> AddBulkCareEvent(BulkCareEventRequest request, NookDbContext db)
+    {
+        if (request.PlantIds is null || request.PlantIds.Count == 0)
+            return Results.BadRequest(new { message = "Select at least one plant." });
+
+        var plantIds = request.PlantIds.Distinct().ToArray();
+        if (plantIds.Length > 100 || plantIds.Any(id => id <= 0))
+            return Results.BadRequest(new { message = "Select between 1 and 100 valid plants." });
+
+        var allowed = new[] { "Watered", "Fed", "Pruned", "Repotted", "Treated", "Moved", "Other" };
+        if (!allowed.Contains(request.EventType, StringComparer.OrdinalIgnoreCase))
+            return Results.BadRequest(new { message = "Unknown care event type." });
+
+        var eventType = allowed.First(type => type.Equals(request.EventType, StringComparison.OrdinalIgnoreCase));
+        var occurredAt = request.OccurredAtUtc ?? DateTime.UtcNow;
+
+        var connection = db.Database.GetDbConnection();
+        await db.Database.OpenConnectionAsync();
+        await using var transaction = await connection.BeginTransactionAsync();
+        await using var command = connection.CreateCommand();
+        command.Transaction = transaction;
+
+        var placeholders = string.Join(", ", plantIds.Select((_, index) => $"@plant{index}"));
+        command.CommandText = $"""
+            INSERT INTO PlantCareEvent (PlantId, EventType, OccurredAtUtc, Notes)
+            SELECT PlantId, @eventType, @occurredAt, @notes
+            FROM Plant
+            WHERE PlantId IN ({placeholders});
+            """;
+        AddParameter(command, "@eventType", eventType);
+        AddParameter(command, "@occurredAt", occurredAt);
+        AddParameter(command, "@notes", string.IsNullOrWhiteSpace(request.Notes) ? null : request.Notes.Trim());
+        for (var index = 0; index < plantIds.Length; index++)
+            AddParameter(command, $"@plant{index}", plantIds[index]);
+
+        var createdCount = await command.ExecuteNonQueryAsync();
+        if (createdCount != plantIds.Length)
+        {
+            await transaction.RollbackAsync();
+            return Results.BadRequest(new { message = "One or more selected plants no longer exist. No logs were saved." });
+        }
+
+        await transaction.CommitAsync();
+        return Results.Ok(new { createdCount });
+    }
+
     private static object ReadPlantSummary(IDataRecord reader) => new
     {
         id = reader.GetInt32(0),
@@ -389,4 +436,5 @@ public static class PlantEndpoints
 
     public sealed record PlantRequest(string Name, string? Species, string? Variety, string? Location, DateOnly? AcquiredDate, string? Notes);
     public sealed record CareEventRequest(string EventType, DateTime? OccurredAtUtc, string? Notes);
+    public sealed record BulkCareEventRequest(List<int>? PlantIds, string EventType, DateTime? OccurredAtUtc, string? Notes);
 }

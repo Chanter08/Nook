@@ -28,6 +28,12 @@ export const addPlantCareEvent = (id: number, payload: { eventType: string; note
     body: JSON.stringify({ ...payload, occurredAtUtc: new Date().toISOString() }),
   });
 
+export const addBulkPlantCareEvent = (payload: { plantIds: number[]; eventType: string; occurredAtUtc: string; notes: string | null }) =>
+  apiRequest<{ createdCount: number }>("/api/plants/care/bulk", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+
 export function analyzePlantPhoto(image: File, plantName: string, species: string | null) {
   const form = new FormData();
   form.append("image", image);

@@ -1,12 +1,17 @@
 import { useEffect, useState } from "react";
-import { ArrowLeft, Camera, CloudRain, Leaf, Plus, Sprout, SunMedium, Trash2 } from "lucide-react";
+import { ArrowLeft, Camera, ClipboardList, CloudRain, Leaf, Plus, Sprout, SunMedium, Trash2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import ThemeToggle from "@/components/ThemeToggle";
-import { analyzePlantPhoto, createPlant, deletePlant, getGardenWeather, getPlants } from "@/api/plants";
+import { addBulkPlantCareEvent, analyzePlantPhoto, createPlant, deletePlant, getGardenWeather, getPlants } from "@/api/plants";
 import { assetUrl } from "@/api/client";
 import type { GardenWeatherContext, PlantAnalysis, PlantPayload, PlantSummary } from "@/types/plant";
 
 const emptyPlant: PlantPayload = { name: "", species: "", variety: "", location: "", acquiredDate: null, notes: "" };
+const careTypes = ["Watered", "Fed", "Pruned", "Repotted", "Treated", "Moved", "Other"];
+
+function localDateTimeValue(date: Date) {
+  return new Date(date.getTime() - date.getTimezoneOffset() * 60_000).toISOString().slice(0, 16);
+}
 
 export default function PlantsPage() {
   const navigate = useNavigate();
@@ -19,6 +24,14 @@ export default function PlantsPage() {
   const [identifyImage, setIdentifyImage] = useState<File | null>(null);
   const [identification, setIdentification] = useState<PlantAnalysis | null>(null);
   const [identifying, setIdentifying] = useState(false);
+  const [showBulkCare, setShowBulkCare] = useState(false);
+  const [selectedPlantIds, setSelectedPlantIds] = useState<number[]>([]);
+  const [bulkCareType, setBulkCareType] = useState("Watered");
+  const [bulkCareNotes, setBulkCareNotes] = useState("");
+  const [bulkCareOccurredAt, setBulkCareOccurredAt] = useState(() => localDateTimeValue(new Date()));
+  const [bulkCareSaving, setBulkCareSaving] = useState(false);
+  const [bulkCareError, setBulkCareError] = useState<string | null>(null);
+  const [bulkCareSuccess, setBulkCareSuccess] = useState<string | null>(null);
 
   async function refresh() {
     try { setPlants(await getPlants()); setError(null); }
@@ -78,6 +91,51 @@ export default function PlantsPage() {
     } catch (e) { setError(e instanceof Error ? e.message : "Couldn't add plant."); }
   }
 
+  function openBulkCare() {
+    setSelectedPlantIds([]);
+    setBulkCareType("Watered");
+    setBulkCareNotes("");
+    setBulkCareOccurredAt(localDateTimeValue(new Date()));
+    setBulkCareError(null);
+    setBulkCareSuccess(null);
+    setShowBulkCare(true);
+  }
+
+  function togglePlantSelection(id: number) {
+    setSelectedPlantIds((current) =>
+      current.includes(id) ? current.filter((selectedId) => selectedId !== id) : [...current, id],
+    );
+  }
+
+  async function submitBulkCare(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (bulkCareSaving || selectedPlantIds.length === 0) return;
+
+    const occurredAt = new Date(bulkCareOccurredAt);
+    if (Number.isNaN(occurredAt.getTime())) {
+      setBulkCareError("Choose a valid date and time.");
+      return;
+    }
+
+    setBulkCareSaving(true);
+    setBulkCareError(null);
+    try {
+      const result = await addBulkPlantCareEvent({
+        plantIds: selectedPlantIds,
+        eventType: bulkCareType,
+        occurredAtUtc: occurredAt.toISOString(),
+        notes: bulkCareNotes.trim() || null,
+      });
+      setShowBulkCare(false);
+      setBulkCareSuccess(`${bulkCareType} logged for ${result.createdCount} ${result.createdCount === 1 ? "plant" : "plants"}.`);
+      await refresh();
+    } catch (e) {
+      setBulkCareError(e instanceof Error ? e.message : "Couldn't save the care logs.");
+    } finally {
+      setBulkCareSaving(false);
+    }
+  }
+
   async function remove(event: React.MouseEvent, plant: PlantSummary) {
     event.stopPropagation();
     if (!confirm(`Remove ${plant.name} and its history?`)) return;
@@ -92,13 +150,20 @@ export default function PlantsPage() {
         <ThemeToggle />
       </div>
 
-      <header className="mt-7 mb-7 flex items-end justify-between gap-4">
+      <header className="mt-7 mb-7 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <p className="text-sm font-medium text-emerald-800 dark:text-emerald-400">Our garden</p>
           <h1 className="mt-1 text-3xl font-semibold tracking-tight">Plants</h1>
           <p className="mt-1 text-sm text-stone-500 dark:text-stone-400">Keep a photo history and remember how each plant has been cared for.</p>
         </div>
-        <button onClick={() => { setShowForm(true); setIdentifyImage(null); setIdentification(null); }} className="flex h-11 shrink-0 items-center gap-2 rounded-full bg-emerald-900 px-4 text-sm font-medium text-white dark:bg-emerald-700"><Plus size={17}/>Add plant</button>
+        <div className="flex flex-wrap gap-2">
+          {plants.length > 0 && (
+            <button onClick={openBulkCare} className="flex h-11 shrink-0 items-center gap-2 rounded-full border border-emerald-800 px-4 text-sm font-medium text-emerald-900 dark:border-emerald-500 dark:text-emerald-300">
+              <ClipboardList size={17}/>Log care
+            </button>
+          )}
+          <button onClick={() => { setShowForm(true); setIdentifyImage(null); setIdentification(null); }} className="flex h-11 shrink-0 items-center gap-2 rounded-full bg-emerald-900 px-4 text-sm font-medium text-white dark:bg-emerald-700"><Plus size={17}/>Add plant</button>
+        </div>
       </header>
 
       {weather && (
@@ -122,6 +187,7 @@ export default function PlantsPage() {
       )}
 
       {error && <div className="mb-5 rounded-2xl bg-red-50 px-4 py-3 text-sm text-red-700 dark:bg-red-400/10 dark:text-red-300">{error}</div>}
+      {bulkCareSuccess && <div role="status" className="mb-5 rounded-2xl bg-emerald-50 px-4 py-3 text-sm text-emerald-900 dark:bg-emerald-400/10 dark:text-emerald-300">{bulkCareSuccess}</div>}
       {loading && <div className="rounded-3xl bg-stone-100 p-8 text-center text-sm text-stone-500 dark:bg-white/[0.045]">Loading plants...</div>}
 
       {!loading && plants.length === 0 && (
@@ -153,6 +219,85 @@ export default function PlantsPage() {
           </article>
         ))}
       </div>
+
+      {showBulkCare && (
+        <div className="fixed inset-0 z-[70] flex items-end bg-black/40 p-3 sm:items-center sm:justify-center" onMouseDown={() => { if (!bulkCareSaving) setShowBulkCare(false); }}>
+          <form
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="bulk-care-title"
+            onSubmit={submitBulkCare}
+            onMouseDown={(e) => e.stopPropagation()}
+            className="max-h-[90dvh] w-full max-w-lg overflow-y-auto rounded-[2rem] bg-white p-6 shadow-2xl dark:bg-stone-900"
+          >
+            <h2 id="bulk-care-title" className="text-xl font-semibold">Log care for multiple plants</h2>
+            <p className="mt-1 text-sm text-stone-500 dark:text-stone-400">
+              Save the same care activity to each selected plant's individual history.
+            </p>
+
+            {bulkCareError && (
+              <p role="alert" className="mt-4 rounded-2xl bg-red-50 p-3 text-sm text-red-700 dark:bg-red-400/10 dark:text-red-300">{bulkCareError}</p>
+            )}
+
+            <div className="mt-5">
+              <div className="flex items-center justify-between gap-3">
+                <p className="text-sm font-medium">Plants ({selectedPlantIds.length} selected)</p>
+                <button
+                  type="button"
+                  className="text-sm font-medium text-emerald-800 dark:text-emerald-400"
+                  onClick={() => setSelectedPlantIds(
+                    selectedPlantIds.length === plants.length ? [] : plants.slice(0, 100).map((plant) => plant.id),
+                  )}
+                >
+                  {selectedPlantIds.length === plants.length ? "Clear all" : "Select all"}
+                </button>
+              </div>
+              <div className="mt-3 max-h-48 overflow-y-auto rounded-2xl border border-stone-200 dark:border-white/10">
+                {plants.map((plant) => (
+                  <label key={plant.id} className="flex cursor-pointer items-center gap-3 border-b border-stone-100 px-4 py-3 last:border-b-0 dark:border-white/[0.06]">
+                    <input
+                      type="checkbox"
+                      checked={selectedPlantIds.includes(plant.id)}
+                      onChange={() => togglePlantSelection(plant.id)}
+                      disabled={bulkCareSaving || (!selectedPlantIds.includes(plant.id) && selectedPlantIds.length >= 100)}
+                      className="h-4 w-4 accent-emerald-800"
+                    />
+                    <span className="min-w-0">
+                      <span className="block text-sm font-medium">{plant.name}</span>
+                      {plant.location && <span className="block text-xs text-stone-500 dark:text-stone-400">{plant.location}</span>}
+                    </span>
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            <div className="mt-5 grid gap-3 sm:grid-cols-2">
+              <label className="grid gap-2 text-sm font-medium">
+                Activity
+                <select required value={bulkCareType} onChange={(e) => setBulkCareType(e.target.value)} disabled={bulkCareSaving} className="h-12 rounded-2xl border border-stone-200 bg-stone-50 px-3 dark:border-white/10 dark:bg-white/5">
+                  {careTypes.map((type) => <option key={type} value={type}>{type}</option>)}
+                </select>
+              </label>
+              <label className="grid gap-2 text-sm font-medium">
+                Date and time
+                <input required type="datetime-local" value={bulkCareOccurredAt} onChange={(e) => setBulkCareOccurredAt(e.target.value)} disabled={bulkCareSaving} className="h-12 min-w-0 rounded-2xl border border-stone-200 bg-stone-50 px-3 dark:border-white/10 dark:bg-white/5"/>
+              </label>
+            </div>
+
+            <label className="mt-4 grid gap-2 text-sm font-medium">
+              Notes (optional)
+              <textarea value={bulkCareNotes} onChange={(e) => setBulkCareNotes(e.target.value)} disabled={bulkCareSaving} placeholder="e.g. watered thoroughly after checking soil" className="min-h-24 rounded-2xl border border-stone-200 bg-stone-50 p-4 dark:border-white/10 dark:bg-white/5"/>
+            </label>
+
+            <div className="mt-5 flex justify-end gap-2">
+              <button type="button" disabled={bulkCareSaving} onClick={() => setShowBulkCare(false)} className="rounded-full px-4 py-2.5 text-sm disabled:opacity-50">Cancel</button>
+              <button type="submit" disabled={bulkCareSaving || selectedPlantIds.length === 0 || !bulkCareOccurredAt} className="rounded-full bg-emerald-900 px-5 py-2.5 text-sm font-medium text-white disabled:opacity-40 dark:bg-emerald-700">
+                {bulkCareSaving ? "Saving..." : `Save to ${selectedPlantIds.length} ${selectedPlantIds.length === 1 ? "plant" : "plants"}`}
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
 
       {showForm && (
         <div className="fixed inset-0 z-[70] flex items-end bg-black/40 p-3 sm:items-center sm:justify-center" onMouseDown={() => setShowForm(false)}>
